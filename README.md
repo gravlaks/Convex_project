@@ -1,3 +1,3 @@
 # Convex_project
 
-Work done by Torstein and Adrien 
+Work done by Torstein and Adrien.
