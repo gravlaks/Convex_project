@@ -3,7 +3,6 @@ from torch.autograd import Variable, grad
 import numpy as np
 torch.manual_seed(1)
 x = torch.randn((1, 4))#([[0.1, 0.2, 0.3]])
-y_true = torch.Tensor([[0, 1]])
 
 output_dim = 2
 input_dim = x.shape[1]
@@ -13,7 +12,7 @@ b = Variable(torch.randn(output_dim, 1), requires_grad=True)
 
 y_pred = torch.nn.Sigmoid()(W@x.T+b)
 n = x.shape[1]
-print(y_pred)
+print("y_pred", y_pred)
 
 variable_count = (n+1)*output_dim
 
