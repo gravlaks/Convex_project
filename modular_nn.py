@@ -5,26 +5,50 @@ import numpy as np
 
 
 class NN():
+    """
+    Return np arrays
+    """
     def __init__(self,X0):
         Ws, bs = X0
-        variable_count = 0
+        param_count = 0
         self.X0 = X0
         for W, b in zip(Ws, bs):
-            variable_count += b.shape[0]
-            variable_count += W.shape[0]*W.shape[1]
-        self.variable_count = variable_count
+            param_count += b.shape[0]
+            param_count += W.shape[0]*W.shape[1]
+        self.param_count = param_count
     def forward(self, a, X):
-        Ws, bs = X
-        out = a
+        
+        X_ = self.unflatten(X)
+        Ws, bs = X_
+        out = a#.tensor(a, dtype=torch.float)
         for W, b in zip(Ws, bs):
-            out = torch.nn.Sigmoid()(W@out+b)
-        return out
+            b = b.detach().numpy().reshape((-1, 1))
+            W = W.detach().numpy()
+            out = out.reshape((-1, 1))
+            z = W@out + b
+
+            out = torch.nn.Sigmoid()(torch.tensor(z))
+            out = out.detach().numpy()
+
+        return out.flatten()
     
-    def jac(self, y_pred, X):
+    def torch_forward(self, a, X):
         Ws, bs = X
+        out = torch.tensor(a, dtype=torch.float32)
+        for W, b in zip(Ws, bs):
+            b = b.reshape((-1, 1))
+            out = out.reshape((-1, 1))
+            out = torch.nn.Sigmoid()(W@out+b)
+
+        return out
+
+    def jac(self, a, X):
+        X_ = self.unflatten(X)
+        y_pred = self.torch_forward(a,X_)
+        Ws, bs = X_
 
         output_dim = y_pred.shape[0]
-        Jac = torch.zeros((output_dim, self.variable_count ))
+        Jac = torch.zeros((output_dim, self.param_count ))
 
         for i, y in enumerate(y_pred):
             left = 0
@@ -42,11 +66,11 @@ class NN():
                 Jac[i, left:left+dim_r] = del_y_del_b
                 left += dim_r
 
-        return Jac
+        return Jac.detach().numpy()
     
     def flatten(self, X):
         Ws, bs = X
-        flattened = torch.zeros((self.variable_count))
+        flattened = torch.zeros((self.param_count))
         left = 0
         for W, b in zip(Ws, bs):
             
@@ -59,9 +83,10 @@ class NN():
             left += dim
             flattened[left:left+dim_r] = b.flatten()
             left += dim_r
+        
 
 
-        return flattened
+        return flattened.detach().numpy()
     
     def unflatten(self, X_flat):
         Ws0, bs0 = self.X0
@@ -72,9 +97,12 @@ class NN():
             len_w = len(w0.flatten())
             len_b = len(b0.flatten())
             
-            Ws.append(X_flat[left:left+len_w].reshape((w0.shape)))
+            Ws.append(Variable(
+                torch.tensor(X_flat[left:left+len_w].reshape((w0.shape)), dtype=torch.float32)
+                , requires_grad=True))
             left = left+len_w
-            bs.append(X_flat[left:left+len_b].reshape((b0.shape)))
+            bs.append(Variable(torch.tensor(X_flat[left:left+len_b].reshape((b0.shape)), dtype=torch.float32)
+                , requires_grad=True))
             left = left+len_b
             
 
