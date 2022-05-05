@@ -19,6 +19,11 @@ class NN():
         for W, b in zip(Ws, bs):
             out = torch.nn.Sigmoid()(W@out+b)
         return out
+        
+    def forward_np(self, a, X):
+        X_flat = torch.from_numpy(X) # torch conversion
+        # X = self.unflatten(X_flat)
+        return self.forward(a, X_flat)
     
     def jac(self, y_pred, X):
         Ws, bs = X
