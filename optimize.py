@@ -41,12 +41,12 @@ def optimize(nn, X0,  A, Y, lambd=0.1, epsilon = 0.5):
     MAX_ITER = 100
     for k in tqdm(range(MAX_ITER)):
         X_tm1_flat = torch.clone(nn.flatten(X_t))
-        X_t = take_step(nn, X_t, A, Y)
+        X_t = take_step(nn, X_t, A, Y, lambd)
 
         if torch.linalg.norm(X_tm1_flat-X_t) <= epsilon:
             break
 
-        X_t = nn.unflatten(X_t, X0)
+        X_t = nn.unflatten(X_t)
     return X_t
 
 if __name__ == '__main__':

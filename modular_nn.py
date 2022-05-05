@@ -63,8 +63,8 @@ class NN():
 
         return flattened
     
-    def unflatten(self, X_flat, X0):
-        Ws0, bs0 = X0
+    def unflatten(self, X_flat):
+        Ws0, bs0 = self.X0
         Ws, bs = [], []
         left = 0
         
