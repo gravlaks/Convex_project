@@ -16,18 +16,20 @@ class NN():
             param_count += b.shape[0]
             param_count += W.shape[0]*W.shape[1]
         self.param_count = param_count
+
+    
     def forward(self, a, X):
         
         X_ = self.unflatten(X)
         Ws, bs = X_
-        out = a#.tensor(a, dtype=torch.float)
+        out = a.reshape((-1, 1))#.tensor(a, dtype=torch.float)
         for W, b in zip(Ws, bs):
             b = b.detach().numpy().reshape((-1, 1))
             W = W.detach().numpy()
             out = out.reshape((-1, 1))
-            z = W@out + b
+            out = W@out + b
 
-            out = torch.nn.Sigmoid()(torch.tensor(z))
+            out = torch.nn.Sigmoid()(torch.tensor(out))
             out = out.detach().numpy()
 
         return out.flatten()
@@ -38,7 +40,9 @@ class NN():
         for W, b in zip(Ws, bs):
             b = b.reshape((-1, 1))
             out = out.reshape((-1, 1))
-            out = torch.nn.Sigmoid()(W@out+b)
+            out = W@out + b
+            #print(out)
+            out = torch.nn.Sigmoid()(out)
 
         return out
 
@@ -65,7 +69,6 @@ class NN():
                 left += dim
                 Jac[i, left:left+dim_r] = del_y_del_b
                 left += dim_r
-
         return Jac.detach().numpy()
     
     def flatten(self, X):
@@ -109,7 +112,15 @@ class NN():
         return (Ws, bs)
 
 
+def get_initial_params(layers_count, m, n):
 
+    Ws0 = [Variable(torch.randn(m, n)*10+3, requires_grad=True)]
+    bs0 = []
+    for i in range(1, layers_count):
+        Ws0.append(Variable(torch.randn(m, n), requires_grad=True))
+    for i in range(layers_count):
+        bs0.append(Variable(torch.randn(m, 1), requires_grad=True))
+    return Ws0, bs0
 
     
 if __name__ == '__main__':
