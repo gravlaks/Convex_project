@@ -3,6 +3,7 @@ numpy
 torchvision
 torchsummary
 pyyaml
-tensorflow
 keras
 rospkg
+scipy
+tqdm
