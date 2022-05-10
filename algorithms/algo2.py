@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse.linalg import lsmr
 from torch.autograd import Variable
 import torch
-from modular_nn import NN, get_initial_params
+from functions.modular_nn import NN, get_initial_params
 from tqdm import tqdm
 
 def get_block(nn, X_t, a, y):

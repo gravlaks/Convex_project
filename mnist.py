@@ -1,7 +1,7 @@
 from keras.datasets import mnist
-from modular_nn import NN, get_initial_params
+from functions.modular_nn import NN, get_initial_params
 import numpy as np
-from optimize import optimize
+from algorithms.algo2 import optimize
 from tensorflow.keras.utils import to_categorical
 import torch
 

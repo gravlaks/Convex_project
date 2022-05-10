@@ -1,7 +1,7 @@
 import torch
 from torch.autograd import Variable, grad
 import numpy as np
-from modular_nn import get_initial_params
+from functions.modular_nn import get_initial_params
 torch.manual_seed(1)
 
 output_dim = 2
