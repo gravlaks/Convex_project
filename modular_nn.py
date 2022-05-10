@@ -6,9 +6,28 @@ import numpy as np
 
 class NN():
     """
-    Return np arrays
+    Simple multi-layered network of the following structure: 
+    Activation function currently sigmoid
+    input data a:
+    x = a 
+    for each layer_i
+        x = activation_function(W_i@x + b_i)
+    y = x
+
+    The class provides most importantly a 
+    - forward function for propagating data through the 
+    network
+    - jac function for return the jacobian with respect to the parameters
+    Both functions expect numpy arrays. 
     """
     def __init__(self,X0):
+        """
+        X0 tuple(Ws, bs): 
+        Ws: list of weight matrices W in neural network
+        bs: list of biases b in neural network
+        
+        initializes param_count: number of parameters in neural network
+        """
         Ws, bs = X0
         param_count = 0
         self.X0 = X0
@@ -19,49 +38,69 @@ class NN():
 
     
     def forward(self, a, X):
+        """
+        a data_row: (n, ) or (n, 1)
+        X np.ndarray: (param_count,)
+
+        Inputs the parameters of the neural network and a data point
+        Outputs the output of the neural network
+        """
         
         X_ = self.unflatten(X)
-        Ws, bs = X_
-        out = a.reshape((-1, 1))#.tensor(a, dtype=torch.float)
-        for W, b in zip(Ws, bs):
-            b = b.detach().numpy().reshape((-1, 1))
-            W = W.detach().numpy()
-            out = out.reshape((-1, 1))
-            out = W@out + b
-
-            out = torch.nn.Sigmoid()(torch.tensor(out))
-            out = out.detach().numpy()
-
+        out = self.__torch_forward(a, X_)
+        out = out.detach().numpy()
         return out.flatten()
     
-    def torch_forward(self, a, X):
+    def __torch_forward(self, a, X):
+        """
+        a data_row: (n, ) or (n, 1)
+        X tuple(Ws, bs): 
+        Ws: list of weight matrices W in neural network (torch tensors)
+        bs: list of biases b in neural network (torch tensors)
+
+        Given a tuple of parameters and data, returns output from neural network 
+        """
         Ws, bs = X
         out = torch.tensor(a, dtype=torch.float32)
         for W, b in zip(Ws, bs):
             b = b.reshape((-1, 1))
             out = out.reshape((-1, 1))
             out = W@out + b
-            #print(out)
             out = torch.nn.Sigmoid()(out)
 
         return out
     def get_projected_J(self, a, X, S):
+        """
+        a data_row: (n, ) or (n, 1)
+        X np.array: (param_count,)
+        S np.ndarray: (K, param_count)
+        Given data, parameters and a projection matrix S, returns The projected Jacobian 
+        """
         return S@self.jac(a, X)
         
     def jac(self, a, X):
-        X_ = self.unflatten(X)
-        y_pred = self.torch_forward(a,X_)
-        Ws, bs = X_
+        """
+        a data_row: (n, ) or (n, 1)
+        X np.array: (param_count,)
 
+        Returns jacobian of Neural network with respect to the parameters for a given data point: 
+        I.e. del NN(X, a) / del X
+        """
+        X_ = self.unflatten(X)
+        y_pred = self.__torch_forward(a,X_)
+        Ws, bs = X_
         output_dim = y_pred.shape[0]
         Jac = torch.zeros((output_dim, self.param_count ))
 
+        """
+        As pytorch can only handle scalars, we iterate through each element of the output
+        and find the gradient of the scalar with respect to our parameters.
+        """
         for i, y in enumerate(y_pred):
             left = 0
 
             for W, b in zip(Ws, bs):
                 del_y_del_w = grad(y, W, retain_graph=True)[0].flatten()
-
                 del_y_del_b = grad(y, b, retain_graph=True)[0].flatten()
                 dim = del_y_del_w.shape[0]
                 dim_r = del_y_del_b.shape[0]
@@ -74,7 +113,16 @@ class NN():
         return Jac.detach().numpy()
     
     def flatten(self, X):
+        """
+        X tuple(Ws, bs): 
+        Ws: list of weight matrices W in neural network (torch tensors)
+        bs: list of biases b in neural network (torch tensors)
+
+        Convert list of weight matrices and biases to a 1D 
+        numpy array
+        """
         Ws, bs = X
+
         flattened = torch.zeros((self.param_count))
         left = 0
         for W, b in zip(Ws, bs):
@@ -94,6 +142,11 @@ class NN():
         return flattened.detach().numpy()
     
     def unflatten(self, X_flat):
+        """
+        X_flat np.array: (param_count,)
+
+        Recover list of weights and biases from 1D np array.
+        """
         Ws0, bs0 = self.X0
         Ws, bs = [], []
         left = 0
@@ -115,6 +168,12 @@ class NN():
 
 
 def get_initial_params(hidden_layer_count, m, n, hidden_neurons):
+    """
+    hidden_layer_count (int): number of hidden layers 
+    m (int): output dimension 
+    n (int): input dimension
+    hidden_neurons (int) : neurons per hidden layer
+    """
     if hidden_layer_count == 0:
         Ws0 = [Variable(torch.zeros((m, n)), requires_grad=True)]
         bs0 = [Variable(torch.zeros((m, 1)), requires_grad=True)]
@@ -140,11 +199,9 @@ if __name__ == '__main__':
 
     output_dim = 2
     input_dim = x.shape[0]
-    Ws = [Variable(torch.randn(output_dim, input_dim), requires_grad=True),
-        Variable(torch.randn(output_dim, output_dim), requires_grad=True)]
-    bs = [Variable(torch.randn(output_dim, 1), requires_grad=True) for _ in range(len(Ws))]
-    nn = NN(Ws, bs)
+    X = get_initial_params(2, output_dim, input_dim, 5)
+    nn = NN(X)
 
-    y_pred = nn.forward(x)
-    jac = nn.jac(y_pred)
+    y_pred = nn.forward(x, nn.flatten(X))
+    jac = nn.jac(x, nn.flatten(X))
     print(jac)
