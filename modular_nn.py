@@ -45,7 +45,9 @@ class NN():
             out = torch.nn.Sigmoid()(out)
 
         return out
-
+    def get_projected_J(self, a, X, S):
+        return S@self.jac(a, X)
+        
     def jac(self, a, X):
         X_ = self.unflatten(X)
         y_pred = self.torch_forward(a,X_)
@@ -112,14 +114,23 @@ class NN():
         return (Ws, bs)
 
 
-def get_initial_params(layers_count, m, n):
+def get_initial_params(hidden_layer_count, m, n, hidden_neurons):
+    if hidden_layer_count == 0:
+        Ws0 = [Variable(torch.zeros((m, n)), requires_grad=True)]
+        bs0 = [Variable(torch.zeros((m, 1)), requires_grad=True)]
+        return Ws0, bs0
+    else:
+        
+        Ws0 = [Variable(torch.zeros((hidden_neurons, n)), requires_grad=True)]
+        bs0 = [Variable(torch.zeros((hidden_neurons, 1)), requires_grad=True)]
+    for i in range(hidden_layer_count-1):
+        w_var = Variable(torch.randn(hidden_neurons, hidden_neurons), requires_grad=True)
+        b_var = Variable(torch.randn(hidden_neurons, 1), requires_grad=True)
+        Ws0.append(w_var)
+        bs0.append(b_var)
+    Ws0.append(Variable(torch.randn(m, hidden_neurons), requires_grad=True))
+    bs0.append(Variable(torch.randn(m, 1), requires_grad=True))
 
-    Ws0 = [Variable(torch.randn(m, n)*10+3, requires_grad=True)]
-    bs0 = []
-    for i in range(1, layers_count):
-        Ws0.append(Variable(torch.randn(m, n), requires_grad=True))
-    for i in range(layers_count):
-        bs0.append(Variable(torch.randn(m, 1), requires_grad=True))
     return Ws0, bs0
 
     
