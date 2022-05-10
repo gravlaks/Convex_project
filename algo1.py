@@ -33,6 +33,13 @@ def random_matrix(k,l,mode="sampling"):
         indexes.sort()
         for i in range(k):
             R[i, indexes[i]] = 1
+    elif mode == "gaussian":
+        # Each component is independantly sampled from N(0,1)
+        # Then we divide by sqrt(k) to ensure columns have norm 1 (in expected value)
+        R = np.random.randn(k,l) / np.sqrt(k)
+    elif mode == "Hadamard":
+        # only for k=l=power of 2 ??
+        pass
     return R
 
 '''
