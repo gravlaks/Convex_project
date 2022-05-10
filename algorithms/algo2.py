@@ -10,12 +10,16 @@ def get_block(nn, X_t, a, y):
     Retrieves Jacobian for single datapoint and 
     calculates one block of the least squares objective:
 
-    ||g(x_t, ai) + J(x, ai)delta_x  - yi||_2^2
+    ||g(x_t, ai) + J(x_t, ai)delta_x  - yi||_2^2
+
     ||J(x, ai)delta_x - (g(x_t, ai)+yi)||_2^2 
     
-    ||Aidelta_x -bi||_2^2
+    ||Aidelta_x - bi||_2^2
 
     returns Ai, bi
+
+    A_i = m x param_count 
+    b_i = m x 1
     
     """
     g = nn.forward(a, X_t)
@@ -27,6 +31,17 @@ def take_step(nn, X_t, A, Y, lambd):
     """
     Take one step in least squares direction
     Line 4-5 in Ergen
+
+    Solving : ||A_ls delta_x -b||_2^2 + lambd||delta_x||_2^2
+
+    ||g(x, A) + Jdelta_x - y||
+
+    = 
+    ||g(x, a_1)+J_2delta_x - y_1||
+      g(x, a_2)+J_2delta_x - y_2
+      ...
+      g(x, a_N)+J_Ndelta_x - y_2
+
     """
     N, m = Y.shape
     N, n = A.shape
