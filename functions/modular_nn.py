@@ -62,11 +62,17 @@ class NN():
         """
         Ws, bs = X
         out = torch.tensor(a, dtype=torch.float32)
+        idx = 0
         for W, b in zip(Ws, bs):
+
             b = b.reshape((-1, 1))
             out = out.reshape((-1, 1))
             out = W@out + b
-            out = torch.nn.Sigmoid()(out)
+            if idx == len(Ws)-1:
+                out = torch.nn.Sigmoid()(out)
+            else:
+                out = torch.nn.Tanh()(out)
+            idx+=1
 
         return out
     def get_projected_J(self, a, X, S):
