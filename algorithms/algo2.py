@@ -27,7 +27,7 @@ def get_block(nn, X_t, a, y):
 
     return jac, -g.flatten() + y.flatten()
 
-def take_step(nn, X_t, A, Y, lambd):
+def take_step(nn, X_t, A, Y, lambd, step_size):
     """
     Take one step in least squares direction
     Line 4-5 in Ergen
@@ -48,6 +48,7 @@ def take_step(nn, X_t, A, Y, lambd):
     A_ls = np.zeros((len(Y[0])*len(Y),X_t.shape[0] ))
     b_ls = np.zeros((len(Y[0])*len(Y),1))
     output_dim = len(Y[0])
+
     for i, (a, y) in enumerate(zip(A, Y)):
         y = y.reshape((m, 1))
         a = a.reshape((n, 1))
@@ -55,12 +56,36 @@ def take_step(nn, X_t, A, Y, lambd):
         A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
         b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
     delt = lsmr(A_ls, b_ls, damp=np.sqrt(lambd))[0]
-    
-    X_upd = X_t.flatten()+delt.flatten()
+    alpha = 0.1
+    val = np.sum(
+        [np.linalg.norm(nn.forward(a, X_t.flatten())-y)**2/2 for a, y in zip(A, Y)]
+    )/N
+    print(val)
+    ## Line search: 
+    t = 1
+    next_X = X_t.flatten()+t*delt.flatten()
+    error = np.sum(
+        [np.linalg.norm(nn.forward(a, next_X)-y)**2/2 for a, y in zip(A, Y)]
+    )/N
+    i = 0
+    max_back_track = 15
+    while error  > val + alpha*t*(A_ls.T@(A_ls@X_t-b_ls.flatten())).T/N@delt :
+        print("backtracking")
+        i+=1
+        if i == max_back_track:
+            print("Max back track")
+            break
+        t = 0.8*t
+        next_X = X_t.flatten()+t*delt.flatten()
+
+        error = np.sum(
+        [np.linalg.norm(nn.forward(a, next_X)-y) for a, y in zip(A, Y)]
+        )/N
+    X_upd = X_t.flatten()+t*step_size*delt.flatten()
     
     return X_upd
 
-def optimize(g, X0,  A, Y, lambd=0.0001, epsilon = 1e-5):
+def optimize(g, X0,  A, Y, lambd=0.0001, epsilon = 1e-3, step_size=0.9):
     """
     g: generic class that provides a forward function and jacobian function
     X0 : initial parameter guess for parameters in g
@@ -74,13 +99,18 @@ def optimize(g, X0,  A, Y, lambd=0.0001, epsilon = 1e-5):
     """
 
     X_t = X0
-    MAX_ITER = 100
+    MAX_ITER = 300
+    N = A.shape[0]
     for k in tqdm(range(MAX_ITER)):
         X_tm1 = np.copy(X_t)
-        X_t = take_step(g, X_t, A, Y, lambd)
+        #np.random.seed(0)
+        random_indices = np.random.choice(N,
+                                  size=N//3,
+                                  replace=False)
+        X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd, step_size)
 
-        if np.linalg.norm(X_tm1-X_t) <= epsilon:
-            break
+        #if np.linalg.norm(X_tm1-X_t) <= epsilon:
+            #break
 
     return X_t
 
