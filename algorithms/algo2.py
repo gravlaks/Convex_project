@@ -56,36 +56,40 @@ def take_step(nn, X_t, A, Y, lambd, step_size):
         A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
         b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
     delt = lsmr(A_ls, b_ls, damp=np.sqrt(lambd))[0]
-    alpha = 0.1
+    alpha = 0.4
     val = np.sum(
         [np.linalg.norm(nn.forward(a, X_t.flatten())-y)**2/2 for a, y in zip(A, Y)]
-    )/N
+    )
     print(val)
     ## Line search: 
     t = 1
     next_X = X_t.flatten()+t*delt.flatten()
     error = np.sum(
         [np.linalg.norm(nn.forward(a, next_X)-y)**2/2 for a, y in zip(A, Y)]
-    )/N
+    )
     i = 0
-    max_back_track = 15
-    while error  > val + alpha*t*(A_ls.T@(A_ls@X_t-b_ls.flatten())).T/N@delt :
-        print("backtracking")
+    max_back_track = 40
+    beta = 0.95
+    while error  > val + alpha*t*(A_ls.T@(A_ls@X_t-b_ls.flatten())).T@delt :
         i+=1
         if i == max_back_track:
             print("Max back track")
             break
-        t = 0.8*t
+        t = beta*t
         next_X = X_t.flatten()+t*delt.flatten()
 
         error = np.sum(
         [np.linalg.norm(nn.forward(a, next_X)-y) for a, y in zip(A, Y)]
-        )/N
-    X_upd = X_t.flatten()+t*step_size*delt.flatten()
+        )
+    X_upd = X_t.flatten()+t*delt.flatten()
     
     return X_upd
+def mse(g, X, A, Y):
+    return np.sum(
+        [np.linalg.norm(g.forward(a, X)-y) for a, y in zip(A, Y)]
+        )/A.shape[0]
 
-def optimize(g, X0,  A, Y, lambd=0.0001, epsilon = 1e-3, step_size=0.9):
+def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=None, Y_test=None):
     """
     g: generic class that provides a forward function and jacobian function
     X0 : initial parameter guess for parameters in g
@@ -97,22 +101,33 @@ def optimize(g, X0,  A, Y, lambd=0.0001, epsilon = 1e-3, step_size=0.9):
     Algorithm 2 (currently without projection)
     Gauss Newton for training Neural network
     """
-
+    train_errors = []
+    test_errors = []
     X_t = X0
-    MAX_ITER = 300
+    MAX_ITER = 150
     N = A.shape[0]
     for k in tqdm(range(MAX_ITER)):
         X_tm1 = np.copy(X_t)
         #np.random.seed(0)
         random_indices = np.random.choice(N,
-                                  size=N//3,
+                                  size=100,
                                   replace=False)
         X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd, step_size)
+
+        train_mse = mse(g,X_t, A, Y)
+        train_errors.append(train_mse)
+        print("Train error:", train_mse )
+
+        if X_test is not None: 
+            test_mse = mse(g, X_t, X_test, Y_test)
+            test_errors.append(test_mse)
+            print("Test error:", test_mse )
+
 
         #if np.linalg.norm(X_tm1-X_t) <= epsilon:
             #break
 
-    return X_t
+    return X_t, train_errors, test_errors
 
 if __name__ == '__main__':
     N, n = 100, 2
@@ -137,7 +152,7 @@ if __name__ == '__main__':
         Y[i, :] = y_pred
     
     ## Run algorithm 2
-    X_est = optimize(nn, nn.flatten(X0), A, Y)
+    X_est, train_errors, test_errors = optimize(nn, nn.flatten(X0), A, Y)
 
 
 
