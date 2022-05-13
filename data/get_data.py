@@ -1,9 +1,33 @@
 
 from keras.datasets import mnist
 import numpy as np
+from pyparsing import line
+def to_categorical(y, num_classes):
+    """ 1-hot encodes a tensor """
+    return np.eye(num_classes, dtype='uint8')[y]
+
+def get_data_classifier(N, linear_input=True):
+    (train_X, train_y), (test_X, test_y) = mnist.load_data()
+    train_X, train_y, test_X, test_y = train_X[:N], train_y[:N], test_X[:500], test_y[:500]
+
+    test_y = to_categorical(test_y, 10)
+    train_y = to_categorical(train_y, 10)
+    ## Normalize data
+    train_X = train_X/np.max(train_X)
+    test_X = test_X/np.max(train_X)
 
 
-def get_data(N):
+    train_y = np.array(train_y,dtype=np.float32)
+    test_y = np.array(test_y, dtype=np.float32)
+    if linear_input:
+        train_X = np.array(train_X, dtype=np.float32).reshape((-1, 28*28))
+        test_X = np.array(test_X, dtype=np.float32).reshape((-1, 28*28))
+    else: 
+        train_X = np.array(train_X, dtype=np.float32)
+        test_X = np.array(test_X, dtype=np.float32)
+        
+    return (train_X, train_y), (test_X, test_y)
+def get_data(N, linear_input=True):
     num = 8
     ## Load MNIST Dataset 
     (train_X, train_y), (test_X, test_y) = mnist.load_data()
@@ -14,10 +38,12 @@ def get_data(N):
 
 
     train_y = np.array(train_y,dtype=np.float32)
-    train_X = np.array(train_X, dtype=np.float32).reshape((-1, 28*28))
-    test_X = np.array(test_X, dtype=np.float32).reshape((-1, 28*28))
-    _, n = train_X.shape
-
+    if linear_input:
+        train_X = np.array(train_X, dtype=np.float32).reshape((-1, 28*28))
+        test_X = np.array(test_X, dtype=np.float32).reshape((-1, 28*28))
+    else:
+        train_X = np.array(train_X, dtype=np.float32)
+        test_X = np.array(test_X, dtype=np.float32)
     neg_idx = np.where(train_y!=num)
     pos_idx = np.where(train_y==num)
 
@@ -54,10 +80,7 @@ def get_data(N):
         test_y_neg[:M//2]
     )).reshape((M, 1))
     
-    assert(train_X.shape==(N, n))
-    assert(train_y.shape==(N, 1)), train_y.shape
-    assert(test_X.shape==(M, n)), test_X.shape
-    assert(test_y.shape==(M,1))
+
     ## Convert target labels to binary classification
     train_y_new = np.zeros_like(train_y)
     test_y_new = np.zeros_like(test_y)

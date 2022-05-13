@@ -43,15 +43,14 @@ def take_step(nn, X_t, A, Y, lambd, step_size):
       g(x, a_N)+J_Ndelta_x - y_2
 
     """
-    N, m = Y.shape
-    N, n = A.shape
+
     A_ls = np.zeros((len(Y[0])*len(Y),X_t.shape[0] ))
     b_ls = np.zeros((len(Y[0])*len(Y),1))
     output_dim = len(Y[0])
 
     for i, (a, y) in enumerate(zip(A, Y)):
-        y = y.reshape((m, 1))
-        a = a.reshape((n, 1))
+        #y = y.reshape((m, 1))
+        #a = a.reshape((n, 1))
         A_bl, b_bl = get_block(nn, X_t, a, y)
         A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
         b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
@@ -89,7 +88,7 @@ def mse(g, X, A, Y):
         [np.linalg.norm(g.forward(a, X)-y) for a, y in zip(A, Y)]
         )/A.shape[0]
 
-def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=None, Y_test=None):
+def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=None, Y_test=None, steps=150):
     """
     g: generic class that provides a forward function and jacobian function
     X0 : initial parameter guess for parameters in g
@@ -104,13 +103,13 @@ def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=No
     train_errors = []
     test_errors = []
     X_t = X0
-    MAX_ITER = 150
+    MAX_ITER = steps
     N = A.shape[0]
     for k in tqdm(range(MAX_ITER)):
         X_tm1 = np.copy(X_t)
         #np.random.seed(0)
         random_indices = np.random.choice(N,
-                                  size=100,
+                                  size=50,
                                   replace=False)
         X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd, step_size)
 

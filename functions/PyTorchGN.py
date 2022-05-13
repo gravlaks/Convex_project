@@ -21,8 +21,9 @@ class NN_GN:
                 left += dim
     def __torch_forward(self, a, X):
         self.__replace_params(X)
-        y_pred = self.nn.forward(torch.tensor(a.flatten()))
+        y_pred = self.nn.forward(torch.tensor(a.squeeze()))
         return y_pred.flatten()
+        
     def jac(self, a, X):
         
         y_pred = self.__torch_forward(a, X)
