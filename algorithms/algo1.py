@@ -58,7 +58,8 @@ def train_1(g,       # g is the model
         A,           # input training data
         y,           # output training data
         k = 10,      # projection dimension
-        eps=0.1,     # stopping criterion
+        #eps=0.1,     # stopping criterion
+        steps = 150, # 2nd stoping criterion: max number of iterations
         lam=1,       # regularization parameter
         x_init = 0,  # starting point
         mode="sampling"):  # generation of random matrices
@@ -78,8 +79,9 @@ def train_1(g,       # g is the model
         assert x_init.size==g.param_count, "initial parameters size and model's parameters size don't match"
         x = x_init
     # core optimization loop
-    dist = eps + 1.0
-    while dist > eps:
+    # dist = eps + 1.0
+    # while dist > eps:
+    for _ in tqdm(range(steps)):
         # random generation of S_t 
         S = random_matrix(k,l,mode=mode)
         # x_new = argmin SUM_i ...
@@ -95,7 +97,7 @@ def train_1(g,       # g is the model
             b_vector += np.matmul(SJ.T, np.matmul(S, residual))
         x_new = solve(A_matrix, b_vector)
         # compute the L2 norm of x_new - x
-        dist = np.linalg.norm(x_new - x, 2)
+        # dist = np.linalg.norm(x_new - x, 2)
         x = x_new  # x is updated 
     return x
 
