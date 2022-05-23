@@ -5,7 +5,6 @@ import random
 import torch
 import sys
 sys.path.append("../functions")
-from modular_nn import NN, get_initial_params
 from tqdm import tqdm
 
 def solve(A,b):
@@ -76,7 +75,7 @@ def train_1(g,       # g is the model
     if x_init.all() == 0:
         x = np.zeros(g.param_count)  # x is not a scalar but an array of coefficients...
     else:
-        assert x.size==g.param_count, "initial parameters size and model's parameters size don't match"
+        assert x_init.size==g.param_count, "initial parameters size and model's parameters size don't match"
         x = x_init
     # core optimization loop
     dist = eps + 1.0

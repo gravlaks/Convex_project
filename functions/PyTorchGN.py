@@ -5,6 +5,7 @@ import torch
 class NN_GN:
     def __init__(self, nn):
         self.nn = nn
+        self.param_count = self.get_X().shape[0]
 
     def forward(self,a, X ):
         
