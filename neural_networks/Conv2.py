@@ -11,7 +11,12 @@ class Conv2(nn.Module):
         self.fc2 = nn.Linear(128, 1)
 
     def forward(self, x):
-        x = x.view(1, 28, 28)
+        try:
+            x = x.view(1, 28, 28)
+        except Exception as e:
+            x = x.view(1, 28, 28)
+
+            print(e)
         x = F.relu(self.conv1(x))
         x = F.relu(F.max_pool2d(self.conv2(x), 2))
         x = F.relu(F.max_pool2d(self.conv3(x),2))

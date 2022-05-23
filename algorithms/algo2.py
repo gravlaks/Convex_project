@@ -6,6 +6,7 @@ import torch
 import sys
 sys.path.append("../functions")
 from tqdm import tqdm
+from datetime import datetime, timedelta
 
 def get_block(nn, X_t, a, y):
     """
@@ -59,15 +60,17 @@ def take_step(nn, X_t, A, Y, lambd, step_size):
     delt = lsmr(A_ls, b_ls, damp=np.sqrt(lambd))[0]
     alpha = 0.4
     val = np.sum(
-        [np.linalg.norm(nn.forward(a, X_t.flatten())-y)**2/2 for a, y in zip(A, Y)]
-    )
+        #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
+        np.linalg.norm(nn.forward(A, X_t).reshape((-1, 1))-Y, axis=1)**2
+    )/2
     print(val)
     ## Line search: 
     t = 1
     next_X = X_t.flatten()+t*delt.flatten()
-    error = np.sum(
-        [np.linalg.norm(nn.forward(a, next_X)-y)**2/2 for a, y in zip(A, Y)]
-    )
+    error =  np.sum(
+        #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
+        np.linalg.norm(nn.forward(A, next_X).reshape((-1, 1))-Y.reshape((-1, 1)), axis=1)**2
+    )/2
     i = 0
     max_back_track = 40
     beta = 0.95
@@ -79,18 +82,20 @@ def take_step(nn, X_t, A, Y, lambd, step_size):
         t = beta*t
         next_X = X_t.flatten()+t*delt.flatten()
 
-        error = np.sum(
-        [np.linalg.norm(nn.forward(a, next_X)-y) for a, y in zip(A, Y)]
-        )
+        error =  np.sum(
+        #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
+        np.linalg.norm(nn.forward(A, next_X).reshape((-1, 1))-Y.reshape((-1, 1)), axis=1)**2
+        )/2
     X_upd = X_t.flatten()+t*delt.flatten()
     
     return X_upd
 def mse(g, X, A, Y):
     return np.sum(
-        [np.linalg.norm(g.forward(a, X)-y) for a, y in zip(A, Y)]
+        #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
+        np.linalg.norm(g.forward(A, X).reshape((-1, 1))-Y.reshape((-1, 1)), axis=1)**2
         )/A.shape[0]
 
-def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=None, Y_test=None, steps=150):
+def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=None, Y_test=None, steps=150, max_time=300, batch_size=100):
     """
     g: generic class that provides a forward function and jacobian function
     X0 : initial parameter guess for parameters in g
@@ -107,11 +112,15 @@ def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=No
     X_t = X0
     MAX_ITER = steps
     N = A.shape[0]
+    t1 = datetime.now()
     for k in tqdm(range(MAX_ITER)):
+        if datetime.now()-t1>timedelta(seconds=max_time):
+            print("timeout")
+            break
         X_tm1 = np.copy(X_t)
         #np.random.seed(0)
         random_indices = np.random.choice(N,
-                                  size=50,
+                                  size=batch_size,
                                   replace=False)
         X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd, step_size)
 
@@ -129,41 +138,4 @@ def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=No
             #break
 
     return X_t, train_errors, test_errors
-
-if __name__ == '__main__':
-    N, n = 100, 2
-    m = 1
-    torch.manual_seed(1)
-
-    #Construct Neural Network
-    Ws0, bs0 = get_initial_params(hidden_layer_count=0, m=m, n=n, hidden_neurons=1)
-    Ws_true, bs_true = get_initial_params(hidden_layer_count=0, m=m, n=n, hidden_neurons=1)
-    X_true = (Ws_true, bs_true)
-    X0 = (Ws0, bs0)
-
-    nn = NN(X0)
-
-    ## Generate X and Y labels
-    A = np.random.randn(N, n)
-    A[0, :] = np.ones((n,))
-    Y = np.zeros((N, m))
-    for i in range(N):
-        a = A[i, :].reshape((n, 1))
-        y_pred =  nn.forward(a, nn.flatten(X_true)).flatten()
-        Y[i, :] = y_pred
-    
-    ## Run algorithm 2
-    X_est, train_errors, test_errors = optimize(nn, nn.flatten(X0), A, Y)
-
-
-
-    ## Print results
-    print("X_true", nn.flatten(X_true))
-    print("X_est", X_est)
-    for i in range(N):
-        a = A[i, :].reshape((n, 1))
-        y_true = nn.forward(a, nn.flatten(X_true)).flatten()
-        y_est = nn.forward(a, X_est)
-        print("Y_true", y_true, "Y_est", y_est)
-
 

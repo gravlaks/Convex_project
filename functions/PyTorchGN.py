@@ -10,6 +10,7 @@ class NN_GN:
     def forward(self,a, X ):
         
         return self.__torch_forward(a, X).detach().numpy()
+   
     def __replace_params(self, X):
         left = 0
     
