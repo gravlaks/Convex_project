@@ -1,7 +1,12 @@
 from keras.datasets import mnist
-from functions.modular_nn import NN, get_initial_params
+import sys
+sys.path.append("./functions")
+from modular_nn import NN, get_initial_params
+# from functions.modular_nn import NN, get_initial_params
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib as mpl
+mpl.use('MacOSX')
+from matplotlib import pyplot as plt
 from algorithms.algo2 import optimize
 from data.get_data import get_data
 import torch
@@ -28,7 +33,7 @@ if __name__ == '__main__':
     plt.plot(train_errors, label = "Train errors")
     plt.plot(test_errors, label="Test errors")
     plt.legend()
-    plt.show()
+    # plt.show()
     
     ## Print results
     correct = 0
