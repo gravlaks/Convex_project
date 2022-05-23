@@ -17,7 +17,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     ## Load MNIST Dataset 
-    N=2000
+    N=1000
     (train_X, train_y), (test_X, test_y) = get_data(N=N, linear_input=False)
 
     ## Get initial neural network parameters 
