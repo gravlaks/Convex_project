@@ -5,7 +5,7 @@ from neural_networks.FC2 import FC2
 from neural_networks.Conv1 import Conv1
 from sgd import stochastic_gradient_descent
 from utils.evaluation import get_accuracy
-from utils.plotting import plot
+from utils.plotting import plot_mult
 import numpy as np
 import matplotlib.pyplot as plt
 from algorithms.algo2 import optimize
@@ -30,21 +30,28 @@ if __name__ == '__main__':
     neural_network.float()
     nn_gn = NN_GN(neural_network)
     X0 = nn_gn.get_X()
-    print("Parameters", X0.shape)
 
 
     MAX_TIME = 40
-    sgd_losses = stochastic_gradient_descent(train_X, train_y, epochs=300, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=100)
-
     ## Do Gauss Newton
+    print("Initial train Accuracy", get_accuracy(nn_gn, train_X, train_y))
+    print("Initial test Accuracy", get_accuracy(nn_gn, test_X, test_y))
+    sgd_losses = stochastic_gradient_descent(train_X, train_y, epochs=300, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=100)
+    print("Train Accuracy SGD", get_accuracy(nn_gn, train_X, train_y))
+    print("Test Accuracy SGD", get_accuracy(nn_gn, test_X, test_y))
 
-    X_est,train_errors, test_errors = optimize(nn_gn, X0, train_X, train_y, X_test = test_X, Y_test = test_y, steps=MAX_TIME, max_time=MAX_TIME, batch_size=100)
-    plot(train_errors, test_errors)
-    
-    ## Print results
-    
-    print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y, X_est))
-    print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y, X_est))
+    X_est,losses_gn_rand, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=300)
+    print("Train Accuracy GN Proj.", get_accuracy(nn_gn, train_X, train_y))
+    print("Test Accuracy GN Proj.", get_accuracy(nn_gn, test_X, test_y))
+
+
+    X_est,losses_gn, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=N)
+    #X_est = train_1(nn_gn, train_X, train_y, x_init=X0, k=1)
+    print("Train Accuracy GN", get_accuracy(nn_gn, train_X, train_y))
+    print("Test Accuracy GN", get_accuracy(nn_gn, test_X, test_y))
+    losses = [losses_gn, losses_gn_rand, sgd_losses]
+    labels = ["GN", "GN Proj", "SGD"]
+    plot_mult(losses, labels)
 
     
 

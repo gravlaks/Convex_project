@@ -1,6 +1,7 @@
 import numpy as np
 
-def get_accuracy(g, A, Y, X_est):
+def get_accuracy(g, A, Y):
+    X_est = g.get_X()
     correct = 0
     for a, y_true in zip(A, Y):
         y_est = g.forward(a, X_est)
