@@ -1,4 +1,4 @@
-
+import math
 import numpy as np
 import cvxpy as cp
 import random
@@ -7,23 +7,28 @@ import sys
 sys.path.append("../functions")
 from tqdm import tqdm
 
+
 def solve(A,b):
     '''
-    auxiliary function that solves Ax=b and returns x
     A is a PSD matrix
     b is a vector
+    auxiliary function that solves Ax=b and returns x
+
     This is done by minimizing the convex function xTAx - 2xTb
-    (conjugate gradient descent method)
+    via stochastic gradient descent (conjugate gradient descent method),
+    which is faster than inverting A
     '''
     def is_pos_def(A):
+        # check that A is PSD
         x = (A==A.T)
         y = np.all(np.linalg.eigvals(A) > 0)
         return (x.all() and y)
-
     assert A.shape[0]==b.size, "error in auxiliary function solve: input dimensions don't match"
     assert is_pos_def(A), "matrix is not PSD"
+    # definition of the optimization problem
     x = cp.Variable(b.size)
-    prob = cp.Problem(cp.Minimize(cp.quad_form(x, A) - 2*b.T@x), [])  # no constraint
+    prob = cp.Problem(cp.Minimize(cp.quad_form(x, A) - 2*b.T@x), [])  # no constraint here
+    # cvxpy library uses stochastic gradient descent (SGD) to solve it:
     prob.solve()
     return x.value
 
@@ -31,8 +36,10 @@ def solve(A,b):
 def random_matrix(k,l,mode="sampling"):
     '''
     Generate a random projection matrix
-    k is the number of rows, l the number of columns 
-    mode is the way the matrix is generated 
+    k is the number of rows
+    l the number of columns 
+    mode is the way the matrix is generated
+    ("sampling", "gaussian" or "Hadamard")
     '''
     assert k<l+1, "random matrix should reduce dimension, not increase it"
     R = np.zeros((k,l))
@@ -47,24 +54,65 @@ def random_matrix(k,l,mode="sampling"):
         # Then we divide by sqrt(k) to ensure columns have norm 1 (in expected value)
         R = np.random.randn(k,l) / np.sqrt(k)
     elif mode == "Hadamard":
-        # only for k=l=power of 2 ??
-        pass
+        # first we construct the classical Hadamard matrices
+        def square_hadamard(n):
+            # returns a Hadamard matrix of dimension (2^n, 2^n)
+            assert n>=0, "index of Hadamard matrix needs to be an integer"
+            if n==0:
+                return np.ones((1,1))
+            elif n==1:
+                M = np.ones((2,2))
+                M[1,1] = -1
+                return M
+            else:
+                M = square_hadamard(n-1)
+                u = 2 ** (n-1)
+                N = np.ones((2*u, 2*u))
+                N[:u, :u] = M
+                N[:u, u:] = M
+                N[u:, :u] = M
+                N[u:, u:] = -M
+                return N
+        # when projection dimension is not exactly a power of 2, 
+        # we pad the matrix with zeros
+        n = int(math.log(k,2))
+        M = square_hadamard(n)
+        R[:2**n, :2**n] = M
+    else:
+        print("ERROR in random_matrix function of algo1: this mode is not defined")
     return R
+
+
+def MSE(g, X, A, Y):
+    '''
+    g is the model
+    X is its parameters 
+    A is input training data
+    Y is output training data
+
+    Return the mean squared error (MSE) of model g 
+    with parameters X on training set (A, Y)
+    '''
+    return np.mean( ( g.forward(A, X).reshape((-1, 1)) - Y.reshape((-1, 1)) )**2 )
+
+
 
 '''
 Algorithm 1 = Randomized Gauss-Newton Algorithm with Per-Sample Jacobian Projection
 '''
-def train_1(g,       # g is the model
-        A,           # input training data
-        y,           # output training data
-        k = 10,      # projection dimension
-        #eps=0.1,     # stopping criterion
-        steps = 150, # 2nd stoping criterion: max number of iterations
-        lam=1,       # regularization parameter
-        x_init = 0,  # starting point
-        mode="sampling"):  # generation of random matrices
+def train_1(g,              # g is the model
+        X0,                 # starting point for the parameters
+        A,                  # input training data
+        y,                  # output training data
+        A_test = None,      # input testing data
+        Y_test = None,      # output testing data
+        k = 10,             # projection space dimension
+        epsilon = 0.0,      # 1st stopping criterion (has to be >0 to be used over the second one)
+        steps = 150,        # 2nd stoping criterion: max number of iterations
+        lambd = 0.1,        # regularization parameter
+        mode = "sampling"): # way random matrices are generated 
     '''
-    trains the model g, ie. optimizes the parameters ('x' below) and return them
+    trains the model g, ie. optimizes the parameters ('X' below) and return them
     g should have attributes
     - g.param_count --> integer
     - g.jac --> takes and returns np.array
@@ -73,36 +121,72 @@ def train_1(g,       # g is the model
     assert A.shape[0]==y.shape[0], "A and y don't have the same number of observations in function train"
     m, l = y.shape[0], y.shape[1]  # data set size and output dimension
     # initialization of model's parameters 
-    if x_init.all() == 0:
-        x = np.zeros(g.param_count)  # x is not a scalar but an array of coefficients...
+    assert X0.size==g.param_count, "initial parameters size and model's parameters size don't match"
+    X = X0
+    # to track optimization progress
+    train_errors = []
+    test_errors = []
+    # core optimization loop now
+    if epsilon == 0.0:
+        # second stopping crietrion here
+        for _ in tqdm(range(steps)):
+            # random generation of S_t 
+            S = random_matrix(k,l,mode=mode)
+            # x_new = argmin SUM_i ...
+            # --> x_new satisfies A_matrix @ x_new = b_vector
+            # we derive x_new here
+            A_matrix = lambd*np.identity(X.size)
+            b_vector = lambd*X
+            for i in range(m):
+                Ji = g.jac(A[i,:], X)        # jacobian of model's parameters for data point i
+                SJ = np.matmul(S, Ji)           # SJ = S_t J_ti, S_t projection matrix, J_ti Jacobian
+                A_matrix += np.matmul(SJ.T, SJ)
+                residual = g.forward(A[i,:], X) - np.matmul(Ji, X) - y[i,:]
+                b_vector += np.matmul(SJ.T, np.matmul(S, residual))
+            x_new = solve(A_matrix, b_vector)
+            X = x_new  # x is updated 
+            train_mse = MSE(g, X, A, Y)
+            train_errors.append(train_mse)
+            print("Train error: ", train_mse )
+            if A_test is not None: 
+                test_mse = MSE(g, X, A_test, Y_test)
+                test_errors.append(test_mse)
+                print("Test error: ", test_mse)
+        return X, train_errors, test_errors
     else:
-        assert x_init.size==g.param_count, "initial parameters size and model's parameters size don't match"
-        x = x_init
-    # core optimization loop
-    # dist = eps + 1.0
-    # while dist > eps:
-    for _ in tqdm(range(steps)):
-        # random generation of S_t 
-        S = random_matrix(k,l,mode=mode)
-        # x_new = argmin SUM_i ...
-        # --> x_new satisfies A_matrix @ x_new = b_vector
-        # we derive x_new here
-        A_matrix = lam*np.identity(x.size)
-        b_vector = lam*x
-        for i in range(m):
-            Ji = g.jac(A[i,:], x)        # jacobian of model's parameters for data point i
-            SJ = np.matmul(S, Ji)           # SJ = S_t J_ti, S_t projection matrix, J_ti Jacobian
-            A_matrix += np.matmul(SJ.T, SJ)
-            residual = g.forward(A[i,:], x) - np.matmul(Ji, x) - y[i,:]
-            b_vector += np.matmul(SJ.T, np.matmul(S, residual))
-        x_new = solve(A_matrix, b_vector)
-        # compute the L2 norm of x_new - x
-        # dist = np.linalg.norm(x_new - x, 2)
-        x = x_new  # x is updated 
-    return x
+        # first stopping crietrion here
+        dist = epsilon + 1.0
+        while dist > epsilon:
+            # random generation of S_t 
+            S = random_matrix(k,l,mode=mode)
+            # x_new = argmin SUM_i ...
+            # --> x_new satisfies A_matrix @ x_new = b_vector
+            # we derive x_new here
+            A_matrix = lambd*np.identity(X.size)
+            b_vector = lambd*X
+            for i in range(m):
+                Ji = g.jac(A[i,:], X)        # jacobian of model's parameters for data point i
+                SJ = np.matmul(S, Ji)           # SJ = S_t J_ti, S_t projection matrix, J_ti Jacobian
+                A_matrix += np.matmul(SJ.T, SJ)
+                residual = g.forward(A[i,:], X) - np.matmul(Ji, X) - y[i,:]
+                b_vector += np.matmul(SJ.T, np.matmul(S, residual))
+            x_new = solve(A_matrix, b_vector)
+            # compute the L2 norm of x_new - x
+            dist = np.linalg.norm(x_new - X, 2)
+            X = x_new  # x is updated 
+            train_mse = MSE(g, X, A, Y)
+            train_errors.append(train_mse)
+            print("Train error: ", train_mse )
+            if A_test is not None: 
+                test_mse = MSE(g, X, A_test, Y_test)
+                test_errors.append(test_mse)
+                print("Test error: ", test_mse)
+        return X, train_errors, test_errors
+
 
 
 if __name__ == "__main__":
+    # Script to test that everything works fine
 
     N, n = 100, 2
     m = 1
@@ -126,7 +210,7 @@ if __name__ == "__main__":
         Y[i, :] = y_pred
     
     ## Run algorithm 1
-    X_est = train_1(nn, A, Y, x_init = nn.flatten(X0), k=1)
+    X_est = train_1(nn, nn.flatten(X0), A, Y, k=1)
     ## Print results
     for i in range(N):
         a = A[i, :].reshape((n, 1))
