@@ -1,8 +1,11 @@
+
 import numpy as np
 from scipy.sparse.linalg import lsmr
 from torch.autograd import Variable
 import torch
-from functions.modular_nn import NN, get_initial_params
+import sys
+sys.path.append("../functions")
+from modular_nn import NN, get_initial_params
 from tqdm import tqdm
 
 def get_block(nn, X_t, a, y):
@@ -163,3 +166,5 @@ if __name__ == '__main__':
         y_true = nn.forward(a, nn.flatten(X_true)).flatten()
         y_est = nn.forward(a, X_est)
         print("Y_true", y_true, "Y_est", y_est)
+
+
