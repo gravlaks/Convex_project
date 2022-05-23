@@ -75,6 +75,7 @@ class NN():
             idx+=1
 
         return out
+        
     def get_projected_J(self, a, X, S):
         """
         a data_row: (n, ) or (n, 1)

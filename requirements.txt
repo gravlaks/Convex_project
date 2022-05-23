@@ -9,3 +9,4 @@ scipy
 tqdm
 tensorflow
 matplotlib
+cvxpy

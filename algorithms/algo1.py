@@ -16,9 +16,15 @@ def solve(A,b):
     This is done by minimizing the convex function xTAx - 2xTb
     (conjugate gradient descent method)
     '''
-    assert(A.shape[0]==b.size, "error in auxiliary function solve: input dimensions don't match")
+    def is_pos_def(A):
+        x = (A==A.T)
+        y = np.all(np.linalg.eigvals(A) > 0)
+        return (x.all() and y)
+
+    assert A.shape[0]==b.size, "error in auxiliary function solve: input dimensions don't match"
+    assert is_pos_def(A), "matrix is not PSD"
     x = cp.Variable(b.size)
-    prob = cp.Problem(cp.Minimize((x.T)@(A@x) - 2*(x.T)@b), [])  # no constraint
+    prob = cp.Problem(cp.Minimize(cp.quad_form(x, A) - 2*b.T@x), [])  # no constraint
     prob.solve()
     return x.value
 
@@ -29,8 +35,8 @@ def random_matrix(k,l,mode="sampling"):
     k is the number of rows, l the number of columns 
     mode is the way the matrix is generated 
     '''
-    assert(k<l+1, "random matrix should reduce dimension, not increase it")
-    R = np.zeros(k,l)
+    assert k<l+1, "random matrix should reduce dimension, not increase it"
+    R = np.zeros((k,l))
     if mode == "sampling": 
         # means we sample some components of the vector
         indexes = random.sample(range(l), k)  # sampling without repetition
@@ -64,14 +70,14 @@ def train_1(g,       # g is the model
     - g.jac --> takes and returns np.array
     - g.forward --> takes and returns np.array
     '''
-    assert(A.shape[0]==y.shape[0], "A and y don't have the same number of observations in function train")
+    assert A.shape[0]==y.shape[0], "A and y don't have the same number of observations in function train"
     m, l = y.shape[0], y.shape[1]  # data set size and output dimension
     # initialization of model's parameters 
-    if x_init == 0:
+    if x_init.all() == 0:
         x = np.zeros(g.param_count)  # x is not a scalar but an array of coefficients...
     else:
-        assert(x.size==g.param_count, "initial parameters size and model's parameters size don't match")
-        x_init = x
+        assert x.size==g.param_count, "initial parameters size and model's parameters size don't match"
+        x = x_init
     # core optimization loop
     dist = eps + 1.0
     while dist > eps:
@@ -83,10 +89,10 @@ def train_1(g,       # g is the model
         A_matrix = lam*np.identity(x.size)
         b_vector = lam*x
         for i in range(m):
-            Ji = g.jac(A[i,:], y[i])        # jacobian of model's parameters for data point i
+            Ji = g.jac(A[i,:], x)        # jacobian of model's parameters for data point i
             SJ = np.matmul(S, Ji)           # SJ = S_t J_ti, S_t projection matrix, J_ti Jacobian
             A_matrix += np.matmul(SJ.T, SJ)
-            residual = g.forward(x, A[i,:]) - np.matmul(Ji, x) - y[i,:]
+            residual = g.forward(A[i,:], x) - np.matmul(Ji, x) - y[i,:]
             b_vector += np.matmul(SJ.T, np.matmul(S, residual))
         x_new = solve(A_matrix, b_vector)
         # compute the L2 norm of x_new - x
@@ -119,13 +125,8 @@ if __name__ == "__main__":
         Y[i, :] = y_pred
     
     ## Run algorithm 1
-    X_est, train_errors, test_errors = train_1(nn, nn.flatten(X0), A, Y)
-
-
-
+    X_est = train_1(nn, A, Y, x_init = nn.flatten(X0), k=1)
     ## Print results
-    print("X_true", nn.flatten(X_true))
-    print("X_est", X_est)
     for i in range(N):
         a = A[i, :].reshape((n, 1))
         y_true = nn.forward(a, nn.flatten(X_true)).flatten()
