@@ -1,3 +1,6 @@
-# Convex_project
+# Randomized Gauss Newton on Neural Networks
 
-Work done by Torstein and Adrien.
+Authors: 
+
+Torstein Ørbeck Eliassen
+Adrien Lemercier

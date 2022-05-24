@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def plot(train_errors, sgd_loss):
+    
     plt.plot(train_errors, label = "Train loss")
     idx = np.round(np.linspace(0, len(sgd_loss) - 1, len(train_errors))).astype(int)
     plt.plot(np.array(sgd_loss)[idx], label="SGD Losses")
@@ -9,11 +10,17 @@ def plot(train_errors, sgd_loss):
     plt.legend()
     plt.show()
 
-def plot_mult(losses, labels):
-    for loss, label in zip(losses, labels):
+def plot_mult(losses, labels, filename):
+    
+    tf = len(losses[0])
 
-        idx = np.round(np.linspace(0, len(loss) - 1, len(losses[0]))).astype(int)
-        plt.plot(np.array(loss)[idx], label=label)
+
+
+    for loss, label in zip(losses, labels):
+        Ts = np.linspace(0, tf, len(loss))
+        #idx = np.round(np.linspace(0, len(loss) - 1, len(losses[0]))).astype(int)
+        plt.plot(Ts, np.array(loss), label=label)
         plt.semilogy()
         plt.legend()
+    plt.savefig(filename)
     plt.show()
