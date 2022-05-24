@@ -1,4 +1,3 @@
-
 import numpy as np
 from scipy.sparse.linalg import lsmr
 from torch.autograd import Variable
@@ -7,6 +6,7 @@ import sys
 sys.path.append("../functions")
 from tqdm import tqdm
 from datetime import datetime, timedelta
+
 
 def get_block(nn, X_t, a, y):
     """
@@ -23,14 +23,13 @@ def get_block(nn, X_t, a, y):
 
     A_i = m x param_count 
     b_i = m x 1
-    
     """
     g = nn.forward(a, X_t)
     jac = nn.jac(a, X_t)
-
     return jac, -g.flatten() + y.flatten()
 
-def take_step(nn, X_t, A, Y, lambd, step_size):
+
+def take_step(nn, X_t, A, Y, lambd):
     """
     Take one step in least squares direction
     Line 4-5 in Ergen
@@ -46,14 +45,10 @@ def take_step(nn, X_t, A, Y, lambd, step_size):
       g(x, a_N)+J_Ndelta_x - y_2
 
     """
-
     A_ls = np.zeros((len(Y[0])*len(Y),X_t.shape[0] ))
     b_ls = np.zeros((len(Y[0])*len(Y),1))
     output_dim = len(Y[0])
-
     for i, (a, y) in enumerate(zip(A, Y)):
-        #y = y.reshape((m, 1))
-        #a = a.reshape((n, 1))
         A_bl, b_bl = get_block(nn, X_t, a, y)
         A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
         b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
@@ -89,13 +84,16 @@ def take_step(nn, X_t, A, Y, lambd, step_size):
     X_upd = X_t.flatten()+t*delt.flatten()
     
     return X_upd
+
+
 def mse(g, X, A, Y):
     return np.sum(
         #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
         np.linalg.norm(g.forward(A, X).reshape((-1, 1))-Y.reshape((-1, 1)), axis=1)**2
         )/A.shape[0]
 
-def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=None, Y_test=None, steps=150, max_time=300, batch_size=100):
+
+def optimize(g, X0, A, Y, A_test=None, Y_test=None, lambd=0.1, epsilon = 1e-3, steps=150, max_time=300, batch_size=100):
     """
     g: generic class that provides a forward function and jacobian function
     X0 : initial parameter guess for parameters in g
@@ -118,24 +116,18 @@ def optimize(g, X0,  A, Y, lambd=0.1, epsilon = 1e-3, step_size=0.999, X_test=No
             print("timeout")
             break
         X_tm1 = np.copy(X_t)
-        #np.random.seed(0)
         random_indices = np.random.choice(N,
                                   size=batch_size,
                                   replace=False)
-        X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd, step_size)
-
+        X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd)
         train_mse = mse(g,X_t, A, Y)
         train_errors.append(train_mse)
-        print("Train error:", train_mse )
-
-        if X_test is not None: 
-            test_mse = mse(g, X_t, X_test, Y_test)
+        print("Train error: ", train_mse )
+        if A_test is not None: 
+            test_mse = mse(g, X_t, A_test, Y_test)
             test_errors.append(test_mse)
-            print("Test error:", test_mse )
-
-
+            print("Test error: ", test_mse )
         #if np.linalg.norm(X_tm1-X_t) <= epsilon:
             #break
-
     return X_t, train_errors, test_errors
 
