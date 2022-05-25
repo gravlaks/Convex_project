@@ -27,10 +27,11 @@ if __name__ == "__main__":
         Y[i, :] = y_pred
     
     ## Run algorithm 1
-    X_est = train_1(nn, A, Y, x_init = nn.flatten(X0), k=1)
+    X_est, train_errors, test_errors = train_1(nn, nn.flatten(X0), A, Y, k=1)
     ## Print results
     for i in range(N):
         a = A[i, :].reshape((n, 1))
         y_true = nn.forward(a, nn.flatten(X_true)).flatten()
         y_est = nn.forward(a, X_est)
         print("Y_true", y_true, "Y_est", y_est)
+        
