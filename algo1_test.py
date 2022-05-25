@@ -27,7 +27,7 @@ if __name__ == "__main__":
         Y[i, :] = y_pred
     
     ## Run algorithm 1
-    X_est = train_1(nn, A, Y, x_init = nn.flatten(X0), k=1)
+    X_est = train_1(nn,nn.flatten(X0), A, Y,  k=1)
     ## Print results
     for i in range(N):
         a = A[i, :].reshape((n, 1))

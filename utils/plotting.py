@@ -10,9 +10,8 @@ def plot(train_errors, sgd_loss):
     plt.legend()
     plt.show()
 
-def plot_mult(losses, labels, filename):
+def plot_mult(losses, labels, filename, tf, title):
     
-    tf = len(losses[0])
 
 
 
@@ -22,5 +21,10 @@ def plot_mult(losses, labels, filename):
         plt.plot(Ts, np.array(loss), label=label)
         plt.semilogy()
         plt.legend()
+    plt.xlabel("Seconds")
+    plt.ylabel("MSE")
+    plt.title(title)
+    plt.tight_layout()
     plt.savefig(filename)
+
     plt.show()

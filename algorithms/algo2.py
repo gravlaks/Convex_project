@@ -29,7 +29,7 @@ def get_block(nn, X_t, a, y):
     return jac, -g.flatten() + y.flatten()
 
 
-def take_step(nn, X_t, A, Y, lambd):
+def take_step(nn, X_t, A, Y, lambd, backtrack):
     """
     Take one step in least squares direction
     Line 4-5 in Ergen
@@ -56,7 +56,7 @@ def take_step(nn, X_t, A, Y, lambd):
     alpha = 0.4
     val = np.sum(
         #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
-        np.linalg.norm(nn.forward(A, X_t).reshape((-1, 1))-Y, axis=1)**2
+        np.linalg.norm(nn.forward(A, X_t).reshape((-1, Y.shape[1]))-Y, axis=1)**2
     )/2
     print(val)
     ## Line search: 
@@ -69,18 +69,19 @@ def take_step(nn, X_t, A, Y, lambd):
     i = 0
     max_back_track = 40
     beta = 0.95
-    while error  > val + alpha*t*(A_ls.T@(A_ls@X_t-b_ls.flatten())).T@delt :
-        i+=1
-        if i == max_back_track:
-            print("Max back track")
-            break
-        t = beta*t
-        next_X = X_t.flatten()+t*delt.flatten()
+    if backtrack:
+        while error  > val + alpha*t*(A_ls.T@(A_ls@X_t-b_ls.flatten())).T@delt :
+            i+=1
+            if i == max_back_track:
+                print("Max back track")
+                break
+            t = beta*t
+            next_X = X_t.flatten()+t*delt.flatten()
 
-        error =  np.sum(
-        #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
-        np.linalg.norm(nn.forward(A, next_X).reshape((-1, 1))-Y.reshape((-1, 1)), axis=1)**2
-        )/2
+            error =  np.sum(
+            #[np.linalg.norm(g.forward(a, X)-y)**2 for a, y in zip(A, Y)]
+            np.linalg.norm(nn.forward(A, next_X).reshape((-1, 1))-Y.reshape((-1, 1)), axis=1)**2
+            )/2
     X_upd = X_t.flatten()+t*delt.flatten()
     
     return X_upd
@@ -93,7 +94,7 @@ def mse(g, X, A, Y):
         )/A.shape[0]
 
 
-def optimize(g, X0, A, Y, A_test=None, Y_test=None, lambd=0.1, epsilon = 1e-3, steps=150, max_time=300, batch_size=100):
+def optimize(g, X0, A, Y, A_test=None, Y_test=None, lambd=0.1, epsilon = 1e-3, steps=150, max_time=300, batch_size=100, backtrack=True):
     """
     g: generic class that provides a forward function and jacobian function
     X0 : initial parameter guess for parameters in g
@@ -111,6 +112,7 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, lambd=0.1, epsilon = 1e-3, s
     MAX_ITER = steps
     N = A.shape[0]
     t1 = datetime.now()
+    print("Parameter count", g.param_count)
     for k in tqdm(range(MAX_ITER)):
         if datetime.now()-t1>timedelta(seconds=max_time):
             print("timeout")
@@ -119,7 +121,7 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, lambd=0.1, epsilon = 1e-3, s
         random_indices = np.random.choice(N,
                                   size=batch_size,
                                   replace=False)
-        X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd)
+        X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd, backtrack)
         train_mse = mse(g,X_t, A, Y)
         train_errors.append(train_mse)
         print("Train error: ", train_mse )

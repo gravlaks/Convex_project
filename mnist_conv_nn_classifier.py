@@ -5,7 +5,7 @@ from neural_networks.FC1 import FC1
 from neural_networks.FC2 import FC2
 from neural_networks.Conv1 import Conv1
 from utils.evaluation import get_accuracy
-from utils.plotting import plot
+from utils.plotting import plot, plot_mult
 import numpy as np
 import matplotlib.pyplot as plt
 from algorithms.algo2 import optimize
@@ -33,14 +33,17 @@ if __name__ == '__main__':
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
+    MAX_TIME = 60
 
-    X_est,train_errors, test_errors = optimize(nn_gn, X0, train_X, train_y, X_test = test_X, Y_test = test_y, steps=100)
-    plot(train_errors, test_errors)
-    
+    print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
+    print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
+    X_est,train_errors, _ = optimize(nn_gn, X0, train_X, train_y, steps=100, batch_size=50, max_time=MAX_TIME)
+
     ## Print results
     
-    print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y, X_est))
-    print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y, X_est))
+    print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
+    print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
+    plot_mult([train_errors], ["mse"], "plots/Classifier10dim", MAX_TIME, "Digit 10dim classification")
 
     
 

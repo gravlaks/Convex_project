@@ -14,13 +14,15 @@ class Conv2(nn.Module):
         try:
             x = x.view(1, 28, 28)
         except Exception as e:
-            x = x.view(1, 28, 28)
+            x = x.view(-1, 1,28, 28)
 
             print(e)
         x = F.relu(self.conv1(x))
         x = F.relu(F.max_pool2d(self.conv2(x), 2))
         x = F.relu(F.max_pool2d(self.conv3(x),2))
-        x = x.view(-1,3*3*8 )
+        x = x.view( -1, 1,3*3*8 )
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
+        x = x.view(-1, 1)        
+
         return F.sigmoid(x)
