@@ -7,6 +7,5 @@ keras
 rospkg
 scipy
 tqdm
-tensorflow
 matplotlib
 cvxpy

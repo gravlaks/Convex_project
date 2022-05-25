@@ -9,9 +9,10 @@ from utils.plotting import plot_mult
 import numpy as np
 import matplotlib.pyplot as plt
 from algorithms.algo2 import optimize
+from algorithms.algo1 import train_1
 from data.get_data import get_data, get_data_classifier
 import torch
-from torchsummary import summary
+# from torchsummary import summary
 
 
 if __name__ == '__main__':
@@ -33,6 +34,10 @@ if __name__ == '__main__':
 
 
     MAX_TIME = 40
+    print("hello")
+    X_est_1,losses_gn_rand_1, _ = train_1(nn_gn, X0, train_X, train_y, steps=50, k=1)
+    print("bye")
+
     ## Do Gauss Newton
     print("Initial train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Initial test Accuracy", get_accuracy(nn_gn, test_X, test_y))
