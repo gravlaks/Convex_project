@@ -18,6 +18,10 @@ if __name__ == '__main__':
 
     ## Load MNIST Dataset 
     N=1000
+    MAX_TIME=30
+
+
+
     (train_X, train_y), (test_X, test_y) = get_data(N=N)
 
     ## Get initial neural network parameters 
@@ -28,11 +32,12 @@ if __name__ == '__main__':
     nn_gn = NN_GN(neural_network)
     X0 = nn_gn.get_X()
 
+
+
     ## Do Gauss Newton
     print("Initial train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Initial test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    MAX_TIME=30
-    sgd_losses = stochastic_gradient_descent(train_X, train_y, epochs=300, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=100)
+    sgd_losses = stochastic_gradient_descent(train_X, train_y, epochs=300, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=300)
     print("Train Accuracy SGD", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy SGD", get_accuracy(nn_gn, test_X, test_y))
 
@@ -47,7 +52,8 @@ if __name__ == '__main__':
     print("Test Accuracy GN", get_accuracy(nn_gn, test_X, test_y))
     losses = [losses_gn, losses_gn_rand, sgd_losses]
     labels = ["GN", "GN Proj", "SGD"]
-    plot_mult(losses, labels)
+    print(nn_gn.param_count)
+    plot_mult(losses, labels, "plots/FC2comparison")
         
 
 
