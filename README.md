@@ -7,7 +7,7 @@ Adrien Lemercier
 
 ## Overview
 
-An efficient Gauss Newton approach using randomized projection based on [1]  is implemented. Improvements are made to mitigate overshooting. A fully modular implementation allows for testing the  algorithm on arbitrarily structured neural networks.
+An efficient Gauss Newton approach using randomized projection based on [1] is implemented. Improvements are made to mitigate overshooting. A fully modular implementation allows for testing the  algorithm on arbitrarily structured neural networks.
 
 2 algorithms are used as a baseline for our approach: Algo 1 that does per-sample projection, algo 2 that does full jacobian projection.
 
