@@ -13,6 +13,13 @@ import matplotlib.pyplot as plt
 
 def stochastic_gradient_descent(X, Y, epochs, nn_gn, max_time, batch_size):
     net = nn_gn.nn
+    def weight_reset(m):
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+            m.reset_parameters()
+
+   
+
+    net.apply(weight_reset)
     optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
     criterion = nn.MSELoss()
     losses = []

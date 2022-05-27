@@ -4,6 +4,7 @@ from neural_networks.Conv2_classifier import Conv2_Classifier
 from neural_networks.FC1 import FC1
 from neural_networks.FC2 import FC2
 from neural_networks.Conv1 import Conv1
+from sgd import stochastic_gradient_descent
 from utils.evaluation import get_accuracy
 from utils.plotting import plot, plot_mult
 import numpy as np
@@ -18,7 +19,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     ## Load MNIST Dataset 
-    N=2000
+    N=1000
     (train_X, train_y), (test_X, test_y) = get_data_classifier(N=N, linear_input=False)
 
     ## Get initial neural network parameters 
@@ -33,17 +34,22 @@ if __name__ == '__main__':
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
-    MAX_TIME = 60
+    MAX_TIME = 300
 
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors, _ = optimize(nn_gn, X0, train_X, train_y, steps=100, batch_size=50, max_time=MAX_TIME)
+    X_est,train_errors, _ = optimize(nn_gn, X0, train_X, train_y, steps=1000, batch_size=200, max_time=MAX_TIME)
+    print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
+    print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
+
+    sgd_losses = stochastic_gradient_descent(train_X, train_y, epochs=300, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=300)
 
     ## Print results
-    
+    losses = [train_errors, sgd_losses]
+    labels = ["Proj. GN", "SGD"]
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    plot_mult([train_errors], ["mse"], "plots/Classifier10dim", MAX_TIME, "Digit 10dim classification")
+    plot_mult(losses, labels,  "plots/Classifier10dim", MAX_TIME, "Digit 10dim classification")
 
     
 
