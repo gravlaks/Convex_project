@@ -17,26 +17,26 @@ An efficient Gauss Newton approach using randomized projection based on [1]  is 
 ### Both algos: 
 
 *Optimization method comparison*
-![Optimization method comparison](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/plots/Opti_method_comp.png)
+![Optimization method comparison](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/blob/main/plots/Opti_method_comp.png)
 
 ### Algo 1: 
 *Projection method comparison*
-![Projection method comparison](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/plots/Projection_method_comp.png)
+![Projection method comparison](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/blob/main/plots/Projection_method_comp.png)
 
 ### Algo 2: 10 digit classification
 
 *Results for Convolutional Neural Net*
-![Results for Convolutional Neural Net](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/plots/Classifier10dim.png)
+![Results for Convolutional Neural Net](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/blob/main/plots/Classifier10dim.png)
 
 ### Algo 2: With vs. without backtracking line search 
 
 *Backtracking on 4 hidden layer Neural Network*
-![alt text](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/plots/Backtrackcomparison.png)
+![alt text](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/blob/main/plots/Backtrackcomparison.png)
 
 ### Algo 2: Projection size comparison
 
 *Comparing batch sizes for random sampling*
-![Comparing batch sizes for random sampling](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/plots/Batch_size_comp.png)
+![Comparing batch sizes for random sampling](https://github.com/gravlaks/Rand-Gauss-Newton-for-NN/blob/main/plots/Batch_size_comp.png)
 
 
 ## References: 
