@@ -46,10 +46,10 @@ if __name__ == '__main__':
 
     ## Print results
     losses = [train_errors, sgd_losses]
-    labels = ["Proj. GN", "SGD"]
+    labels = ["Algo 2", "SGD"]
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    plot_mult(losses, labels,  "plots/Classifier10dim", MAX_TIME, "Digit 10dim classification")
+    plot_mult(losses, labels,  "plots/Classifier10dim", MAX_TIME, "Algo 2: Digit 10dim classification")
 
     
 

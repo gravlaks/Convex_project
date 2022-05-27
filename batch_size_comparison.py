@@ -45,7 +45,7 @@ if __name__ == '__main__':
     
     labels = [f"Batch size: {bs}" for bs in batch_sizes]
     print(nn_gn.param_count)
-    plot_mult(losses, labels, "plots/Batch_size_comp", MAX_TIME, "Batch Size comparison")
+    plot_mult(losses, labels, "plots/Batch_size_comp", MAX_TIME, "Algo 2: Batch Size comparison")
         
 
 

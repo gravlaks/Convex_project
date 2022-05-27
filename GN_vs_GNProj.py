@@ -49,9 +49,9 @@ if __name__ == '__main__':
     print("Train Accuracy GN", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy GN", get_accuracy(nn_gn, test_X, test_y))
     losses = [losses_gn, losses_gn_rand]
-    labels = ["GN", "GN Proj", ]
+    labels = ["GN", "Algo 2", ]
     print(nn_gn.param_count)
-    plot_mult(losses, labels, "plots/GN_vs_GNproj", MAX_TIME, "GN vs. Proj. GN")
+    plot_mult(losses, labels, "plots/GN_vs_GNproj", MAX_TIME, "GN vs. Algo 2")
         
 
 

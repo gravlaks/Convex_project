@@ -51,7 +51,7 @@ if __name__ == '__main__':
     losses = [losses_gn_backtrack, losses_gn]
     labels = ["With Backtrack", "Without Backtrack"]
     print(nn_gn.param_count)
-    plot_mult(losses, labels, "plots/Backtrackcomparison", MAX_TIME, "Backtracking Comparison")
+    plot_mult(losses, labels, "plots/Backtrackcomparison", MAX_TIME, "Algo 2 Backtracking Comparison")
         
 
 
