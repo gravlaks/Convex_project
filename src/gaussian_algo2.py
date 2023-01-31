@@ -8,7 +8,6 @@ from utils.evaluation import get_accuracy
 from utils.plotting import plot, plot_mult
 import numpy as np
 import matplotlib.pyplot as plt
-from algorithms.algo1 import train_1
 from algorithms.algo2 import optimize
 from data.get_data import get_data, get_data_classifier
 import torch
@@ -19,7 +18,7 @@ if __name__ == '__main__':
 
     ## Load MNIST Dataset 
     N=1000
-    MAX_TIME=300
+    MAX_TIME=30
 
 
 
@@ -29,29 +28,29 @@ if __name__ == '__main__':
     m = train_y.shape[1]
     n = train_X.shape[1]
 
-    neural_network = BacktrackFC(input_dim=n, output_dim=m)
+    neural_network = FC2(input_dim=n, output_dim=m)
     nn_gn = NN_GN(neural_network)
     X0 = nn_gn.get_X()
 
 
-
+    
     ## Do Gauss Newton
     print("Initial train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Initial test Accuracy", get_accuracy(nn_gn, test_X, test_y))
 
-    X_est,losses_gn_backtrack, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=300 ,backtrack=True)
+    X_est,losses_gn_backtrack, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=300 ,backtrack=True,optimization_method="Gaussian")
     print("Train Accuracy GN Proj.", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy GN Proj.", get_accuracy(nn_gn, test_X, test_y))
 
 
-    X_est,losses_gn, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=300, backtrack=False)
+    X_est,losses_gn, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=300, backtrack=True, optimization_method="Random")
     #X_est = train_1(nn_gn, train_X, train_y, x_init=X0, k=1)
     print("Train Accuracy GN", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy GN", get_accuracy(nn_gn, test_X, test_y))
     losses = [losses_gn_backtrack, losses_gn]
-    labels = ["With Backtrack", "Without Backtrack"]
+    labels = ["Gaussian", "Sampling"]
     print(nn_gn.param_count)
-    plot_mult(losses, labels, "plots/Backtrackcomparison", MAX_TIME, "Algo 2 Backtracking Comparison")
+    plot_mult(losses, labels, "plots/algo2_proj_methods", MAX_TIME, "Algo 2 Projection Matrix Comparison")
         
 
 

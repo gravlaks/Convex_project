@@ -1,12 +1,13 @@
 from torch.autograd import Variable, grad
+from torch.autograd.functional import jacobian
 import numpy as np
 import torch
 
 class NN_GN:
-    def __init__(self, nn):
+    def __init__(self, nn, is_linear=True):
         self.nn = nn
         self.param_count = self.get_X().shape[0]
-
+        self.is_linear =is_linear
     def forward(self,a, X ):
         
         return self.__torch_forward(a, X).detach().numpy()
@@ -23,28 +24,38 @@ class NN_GN:
                 left += dim
     def __torch_forward(self, a, X):
         self.__replace_params(X)
-        y_pred = self.nn.forward(torch.tensor(a.squeeze()))
+        if not self.is_linear:
+            a = a.reshape((-1, a.shape[-1]))
+        y_pred = self.nn.forward(torch.tensor(a))
         return y_pred.flatten()
         
     def jac(self, a, X):
-        
+        self.__replace_params(X)
         y_pred = self.__torch_forward(a, X)
-        Jac = []
-        for y in y_pred:
-            row = []
-            for name, W in self.nn.named_parameters():
-                del_y_del_w = grad(y, W, retain_graph=True)[0].flatten().detach().numpy()
+        Jac = np.zeros((y_pred.shape[0],len(X)))
 
-                row.append(del_y_del_w.flatten())
-            row = np.hstack(row)
+        
+        Jac = [] 
+
+        for y in y_pred:
+            row = torch.autograd.grad(y, list(self.nn.parameters()), retain_graph=True)
+            row = np.hstack([r.flatten().detach().numpy() for r in row])
+            # print(res)
+            # row = []
+            # for name, W in self.nn.named_parameters():
+            #     del_y_del_w = grad(y, W, retain_graph=True)[0].flatten().detach().numpy()
+
+            #     row.append(del_y_del_w.flatten())
+            # row = np.hstack(row)
             Jac.append(row)
         Jac = np.vstack(Jac)
         return Jac
     def get_X(self):
         X = []
-       
-        for name, W in self.nn.named_parameters():
+        params = list(self.nn.parameters())
+        for W in params:
             X.append(W.detach().numpy().flatten())
+        print("param", len(X))
         X = np.hstack(X)
         return X
 
