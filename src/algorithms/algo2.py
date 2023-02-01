@@ -32,15 +32,16 @@ def get_block(nn, X_t, a, y):
 def get_block_dropout(nn, X_t, a, y, keep_prob):
      
 
-    g = nn.forward(a, X_t)*1/keep_prob
+    g = nn.forward(a, X_t)
     jac = nn.jac(a, X_t)
     return jac, -g.flatten() + y.flatten()
-def backtrack_step(X_t, A,Y,  A_ls, b_ls, delt, nn,  beta=0.8, alpha = 0.4, maxi=100):
+
+def backtrack_step(X_t, A,Y,  A_ls, b_ls, delt, nn,  beta=0.95, alpha = 0.4, maxi=100):
         ## Test on random sample of 300
 
         def get_val(X):
             random_indices = np.random.choice(len(A),
-                                  size=100,
+                                  size=min(150, len(A)),
                                   replace=False)
             val = np.sum(
             np.linalg.norm(nn.forward(A[random_indices], X).reshape((-1, Y.shape[1]))-Y[random_indices], axis=1)**2
@@ -99,26 +100,12 @@ def take_step(nn, X_t, A, Y, lambd, backtrack):
 
 
 def take_step_gaussian(nn, X_t, A, Y, lambd, backtrack):
-    """
-    Take one step in least squares direction
-    Line 4-5 in Ergen
-
-    Solving : ||A_ls delta_x -b||_2^2 + lambd||delta_x||_2^2
-
-    ||g(x, A) + Jdelta_x - y||
-
-    = 
-    ||g(x, a_1)+J_2delta_x - y_1||
-      g(x, a_2)+J_2delta_x - y_2
-      ...
-      g(x, a_N)+J_Ndelta_x - y_2
-
-    """
+    
    
     A_ls = np.zeros((len(Y[0])*len(Y),X_t.shape[0] ))
     b_ls = np.zeros((len(Y[0])*len(Y),1))
     output_dim = len(Y[0])
-    full_jac = get_block(nn, X_t, A, Y)
+    #full_jac = get_block(nn, X_t, A, Y)
     
     for i, (a, y) in enumerate(zip(A, Y)):
         A_bl, b_bl = get_block(nn, X_t, a, y)
@@ -126,7 +113,7 @@ def take_step_gaussian(nn, X_t, A, Y, lambd, backtrack):
         A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
         b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
 
-    k = 500
+    k = 100
     S = np.random.randn(k, A_ls.shape[0]) / (A_ls.shape[0])
     delt = lsmr(S@A_ls, S@b_ls, damp=np.sqrt(lambd))[0]
 
@@ -145,7 +132,7 @@ def take_step_sample_columns(nn, X_t, A, Y, lambd, backtrack):
     A_ls = np.zeros((len(Y[0])*len(Y),X_t.shape[0] ))
     b_ls = np.zeros((len(Y[0])*len(Y),1))
     output_dim = len(Y[0])
-    keep_prob = 0.3
+    keep_prob = 0.99
 
     indices = np.random.choice(A_ls.shape[1], size=int(A_ls.shape[1]*keep_prob), replace=False)
     X_t_dropout = np.zeros_like(X_t)
@@ -157,13 +144,12 @@ def take_step_sample_columns(nn, X_t, A, Y, lambd, backtrack):
     t1 = time.time()
 
     for i, (a, y) in enumerate(zip(A, Y)):
-        A_bl, b_bl = get_block_dropout(nn, X_t_dropout, a, y, keep_prob)
+        A_bl, b_bl = get_block_dropout(nn, X_t, a, y, keep_prob)
         A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
         b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
     t2 = time.time()
     A_ls_sampled = A_ls[:, indices]
-    print(A_ls_sampled.shape)
-    delt_sampled = lsmr(A_ls_sampled, b_ls, damp=np.sqrt(lambd))[0]
+    delt_sampled = lsmr(A_ls_sampled, b_ls, damp=np.sqrt(lambd))[0]*keep_prob
 
     t3 = time.time()
     delt = np.zeros_like(X_t)
@@ -174,9 +160,9 @@ def take_step_sample_columns(nn, X_t, A, Y, lambd, backtrack):
         step = delt.flatten()
     t4 = time.time()
 
-    print(t2-t1)
-    print(t3-t2)
-    print(t4-t3)
+    # print(t2-t1)
+    # print(t3-t2)
+    # print(t4-t3)
     return X_t.flatten()+step
 
 
@@ -225,7 +211,7 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, lambd=0.1, epsilon = 1e-3, s
             X_t = take_step(g, X_t, A[random_indices, :], Y[random_indices, :], lambd, backtrack)
         elif optimization_method == "Gaussian":
 
-            X_t = take_step_gaussian(g, X_t, A, Y, lambd, backtrack)
+            X_t = take_step_gaussian(g, X_t, A[random_indices], Y[random_indices], lambd, backtrack)
         elif optimization_method == "Random columns":
 
 
@@ -233,10 +219,11 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, lambd=0.1, epsilon = 1e-3, s
 
         else:
             raise NotImplementedError
-        train_mse = mse(g,X_t, A, Y)
+        train_mse = mse(g,X_t, A[random_indices], Y[random_indices])
         train_errors.append(train_mse)
-        print("Train error: ", train_mse )
-        print("Epoch time: ", time.time()-t_start)
+        if k%10==1:
+            print("Train error: ", train_mse )
+            print("Epoch time: ", time.time()-t_start)
         if A_test is not None: 
             test_mse = mse(g, X_t, A_test, Y_test)
             test_errors.append(test_mse)

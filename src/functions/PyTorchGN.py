@@ -33,23 +33,13 @@ class NN_GN:
         self.__replace_params(X)
         y_pred = self.__torch_forward(a, X)
         Jac = np.zeros((y_pred.shape[0],len(X)))
-
-        
-        Jac = [] 
-
-        for y in y_pred:
+    
+        for i, y in enumerate(y_pred):
             row = torch.autograd.grad(y, list(self.nn.parameters()), retain_graph=True)
             row = np.hstack([r.flatten().detach().numpy() for r in row])
-            # print(res)
-            # row = []
-            # for name, W in self.nn.named_parameters():
-            #     del_y_del_w = grad(y, W, retain_graph=True)[0].flatten().detach().numpy()
-
-            #     row.append(del_y_del_w.flatten())
-            # row = np.hstack(row)
-            Jac.append(row)
-        Jac = np.vstack(Jac)
+            Jac[i] = row
         return Jac
+        
     def get_X(self):
         X = []
         params = list(self.nn.parameters())
