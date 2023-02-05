@@ -4,7 +4,7 @@ def get_accuracy(g, A, Y):
     X_est = g.get_X()
     correct = 0
     for a, y_true in zip(A, Y):
-        y_est = g.forward(a, X_est)
+        y_est = g.forward(np.expand_dims(a,0), X_est)
         if y_est.shape[0] >1:
             y_est = np.argmax(y_est)
             y_true = np.argmax(y_true)

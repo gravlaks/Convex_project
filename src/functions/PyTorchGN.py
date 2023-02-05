@@ -26,6 +26,7 @@ class NN_GN:
         self.__replace_params(X)
         if not self.is_linear:
             a = a.reshape((-1, a.shape[-1]))
+        
         y_pred = self.nn.forward(torch.tensor(a))
         return y_pred.flatten()
         
@@ -39,13 +40,12 @@ class NN_GN:
             row = np.hstack([r.flatten().detach().numpy() for r in row])
             Jac[i] = row
         return Jac
-        
+
     def get_X(self):
         X = []
         params = list(self.nn.parameters())
         for W in params:
             X.append(W.detach().numpy().flatten())
-        print("param", len(X))
         X = np.hstack(X)
         return X
 

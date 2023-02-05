@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     ## Load MNIST Dataset 
     N=1000
-    MAX_TIME=300
+    MAX_TIME=50
 
 
 

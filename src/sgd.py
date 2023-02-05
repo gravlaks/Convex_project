@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
 
-def stochastic_gradient_descent(X, Y, epochs, nn_gn, max_time, batch_size):
+def stochastic_gradient_descent(X, Y, epochs, nn_gn, max_time, batch_size, lr=0.001):
     net = nn_gn.nn
     def weight_reset(m):
         if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
@@ -20,7 +20,7 @@ def stochastic_gradient_descent(X, Y, epochs, nn_gn, max_time, batch_size):
    
 
     net.apply(weight_reset)
-    optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
     criterion = nn.MSELoss()
     losses = []
     t1 = datetime.now()
@@ -45,7 +45,9 @@ def stochastic_gradient_descent(X, Y, epochs, nn_gn, max_time, batch_size):
         optimizer.step()
         #print(f'[{epoch + 1}, {i + 1:5d}] loss: {loss.item():.3f}')
         l = customloss(nn_gn, X, Y)
-        print(f"{epoch}: Loss MSE: {l} ")
+        if epoch%100==1:
+            
+            print(f"{epoch}: Loss MSE: {l} ")
         epoch+=1
         losses.append(l)
     print("Timeout")
