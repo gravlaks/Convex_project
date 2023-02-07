@@ -6,7 +6,7 @@ from neural_networks.FC2 import FC2
 from neural_networks.Conv1 import Conv1
 from sgd import stochastic_gradient_descent
 from utils.evaluation import get_accuracy
-from utils.plotting import plot, plot_mult
+from utils.plotting import *
 import numpy as np
 import matplotlib.pyplot as plt
 from algorithms.algo2 import optimize
@@ -33,40 +33,44 @@ if __name__ == '__main__':
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
-    MAX_TIME = 20
+    MAX_TIME = 120
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_1, _ = optimize(nn_gn, X0, train_X, train_y, steps=1000, batch_size=200, max_time=MAX_TIME, backtrack=True,
-                        optimization_method="Random columns", optim_params={"keep_prob":1})
+    X_est,train_errors_1, _ , timer1= optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=False,
+                        optimization_method="Random columns", optim_params={"keep_prob":1}, visualize=False)
 
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_05, _ = optimize(nn_gn, X0, train_X, train_y, steps=1000, batch_size=200, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_05, _ , timer05 = optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.5})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_01, _ = optimize(nn_gn, X0, train_X, train_y, steps=1000, batch_size=200, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_01, _, timer01 = optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.1})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_001, _ = optimize(nn_gn, X0, train_X, train_y, steps=1000, batch_size=200, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_001, _ , timer001= optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.01})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
 
-    sgd_losses_lr05 = stochastic_gradient_descent(train_X, train_y, epochs=3000, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.5)
+    sgd_losses_lr05 = stochastic_gradient_descent(train_X, train_y,  nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.5)
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    
-    sgd_losses_lr01 = stochastic_gradient_descent(train_X, train_y, epochs=3000, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.1)
+    plot_timer(timer1)
+    plot_timer(timer05)
+    plot_timer(timer01)
+    plot_timer(timer001)
+    sgd_losses_lr01 = stochastic_gradient_descent(train_X, train_y, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.1)
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    sgd_losses_lr001 = stochastic_gradient_descent(train_X, train_y, epochs=3000, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.01)
+    sgd_losses_lr001 = stochastic_gradient_descent(train_X, train_y,nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.01)
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    sgd_losses_lr0001 = stochastic_gradient_descent(train_X, train_y, epochs=3000, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.001)
+    sgd_losses_lr0001 = stochastic_gradient_descent(train_X, train_y,  nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.001)
 
     ## Print results
+
     losses = [train_errors_1,train_errors_05, train_errors_01, train_errors_001, sgd_losses_lr05, sgd_losses_lr01, sgd_losses_lr001, sgd_losses_lr0001]
     labels = ["Algo 2: keep_prob 1", "Algo 2: keep_prob 0.5", "Algo 2: keep_prob 0.1", "Algo2 : keep_prob 0.01", "SGD lr: 0.5","SGD lr: 0.1", "SGD lr: 0.01", "SGD lr: 0.001"]
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))

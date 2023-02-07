@@ -2,6 +2,7 @@ from torch.autograd import Variable, grad
 from torch.autograd.functional import jacobian
 import numpy as np
 import torch
+import threading 
 
 class NN_GN:
     def __init__(self, nn, is_linear=True):
@@ -35,6 +36,34 @@ class NN_GN:
         y_pred = self.__torch_forward(a, X)
         Jac = np.zeros((y_pred.shape[0],len(X)))
     
+        # rows = [np.hstack([r.flatten().detach().numpy() for r in
+        #     torch.autograd.grad(y, list(self.nn.parameters()), retain_graph=True)]) for y in y_pred]
+        # Jac = np.vstack(rows)
+        # return Jac
+
+        # threads = []
+        # rows = []
+        # def func(y, rows):
+
+        #     row = torch.autograd.grad(y, list(self.nn.parameters()), retain_graph=True)
+        #     row = np.hstack([r.flatten().detach().numpy() for r in row])
+        #     sem.acquire()
+
+        #     rows.append(row)
+        #     sem.release()
+
+        # sem = threading.Semaphore()  
+        # for i, y in enumerate(y_pred):
+        #     # print("y", y)
+        #     p = threading.Thread(target=func, args=(y, rows))
+        #     p.start()
+        #     threads.append(p)
+        # #print("Threads count", len(threads))
+        # for p in threads:
+        #     p.join()
+        # #print(rows)
+        # Jac = np.vstack(rows)
+        # return Jac
         for i, y in enumerate(y_pred):
             row = torch.autograd.grad(y, list(self.nn.parameters()), retain_graph=True)
             row = np.hstack([r.flatten().detach().numpy() for r in row])

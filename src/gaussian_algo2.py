@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     ## Load MNIST Dataset 
     N=1000
-    MAX_TIME=30
+    MAX_TIME=10
 
 
 
@@ -33,17 +33,15 @@ if __name__ == '__main__':
     X0 = nn_gn.get_X()
 
 
-    
     ## Do Gauss Newton
     print("Initial train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Initial test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-
-    X_est,losses_gn_backtrack, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=300 ,backtrack=True,optimization_method="Gaussian")
+    print(X0[:5])
+    X_est,losses_gn_backtrack, _, timer = optimize(nn_gn, X0, train_X, train_y,  max_time=MAX_TIME, batch_size=300 ,backtrack=True,optimization_method="Gaussian")
     print("Train Accuracy GN Proj.", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy GN Proj.", get_accuracy(nn_gn, test_X, test_y))
 
-
-    X_est,losses_gn, _ = optimize(nn_gn, X0, train_X, train_y, steps=300, max_time=MAX_TIME, batch_size=300, backtrack=True, optimization_method="Random")
+    X_est,losses_gn, _, timer = optimize(nn_gn, X0, train_X, train_y,  max_time=MAX_TIME, batch_size=300, backtrack=True, optimization_method="Random")
     #X_est = train_1(nn_gn, train_X, train_y, x_init=X0, k=1)
     print("Train Accuracy GN", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy GN", get_accuracy(nn_gn, test_X, test_y))

@@ -28,3 +28,14 @@ def plot_mult(losses, labels, filename, tf, title):
     plt.savefig(filename)
 
     plt.show()
+
+def plot_timer(timer):
+
+    y = [np.mean(np.array(timer["Jac creation"])), np.mean(np.array(timer["LS solve"])), np.mean(np.array(timer["backtrack"]))]
+    
+    plt.pie(y, labels = ["Jacobian creation", "LS solve", "Backtracking"])
+    plt.show()
+
+def visualize_step(step):
+    plt.hist(step, bins=100,density=True, log=True)
+    plt.show()

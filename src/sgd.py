@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 
 
-def stochastic_gradient_descent(X, Y, epochs, nn_gn, max_time, batch_size, lr=0.001):
+def stochastic_gradient_descent(X, Y,  nn_gn, max_time, batch_size, lr=0.001):
     net = nn_gn.nn
     def weight_reset(m):
         if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):

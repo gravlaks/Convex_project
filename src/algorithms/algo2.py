@@ -7,26 +7,28 @@ from tqdm import tqdm
 from datetime import datetime, timedelta
 import time
 
-
+from utils.plotting import visualize_step
 
  
     
 
 
 class Stepper():
-    def __init__(self, optimization_method, nn, backtrack, lambd, batch_size, optim_params=None):
+    def __init__(self, optimization_method, nn, backtrack, batch_size, optim_params, visualize):
         if optim_params is None:
             optim_params = {}
         self.optimization_method=optimization_method
         self.nn = nn
         self.backtrack=backtrack
-        self.lambd = lambd
+        self.lambd = 1
         self.batch_size = batch_size
+        self.visualize = visualize
         if "keep_prob" in optim_params:
             self.keep_prob = optim_params["keep_prob"]
         else:
             self.keep_prob = 0.5
         
+
     def get_block(self, a, y):
         """
         Retrieves Jacobian for single datapoint and 
@@ -46,24 +48,15 @@ class Stepper():
     
 
         g = self.nn.forward(np.expand_dims(a, 0), self.X_t)
-        jac = self.nn.jac(np.expand_dims(a, 0), self.X_t)
-        self.jac = jac
-        return jac, -g.flatten() + y.flatten()
+        #jac = self.nn.jac(np.expand_dims(a, 0), self.X_t)
+        #self.jac = jac
+        return -g.flatten() + y.flatten()
 
-    def backtrack_step(self, A, Y,  A_ls, b_ls, delt,  beta=0.95, alpha = 0.005, maxi=15):
-        ## Test on random sample of 300
-
-        # def get_val(X):
-        #     random_indices = np.random.choice(len(A),
-        #                           size=min(150, len(A)),
-        #                           replace=False)
-        #     val = np.sum(
-        #     np.linalg.norm(self.nn.forward(A[random_indices], X).reshape((-1, Y.shape[1]))-Y[random_indices], axis=1)**2 
-        # )/2 + self.lambd*np.linalg.norm(delt)**2 
-        #     return val
+    def backtrack_step(self, A, Y,  A_ls, b_ls, delt,  beta=0.95, alpha = 0.1, maxi=30):
+        
 
         def get_f(step):
-            ret = np.linalg.norm(self.nn.forward(A, self.X_t + step)-Y.flatten()) # + self.lambd*np.linalg.norm(step)**2
+            ret = np.linalg.norm(self.nn.forward(A, self.X_t + step)-Y.flatten())**2 # + self.lambd*np.linalg.norm(step)**2
             return ret
         #val = get_val(self.X_t)
         i = 0
@@ -92,10 +85,10 @@ class Stepper():
 
             new_error =  get_f(step)
         print(i)
-        if i < 1 and self.lambd>1e-7:
-            self.lambd/=2
+        if i < 1 and self.lambd>1e-15:
+            self.lambd/=4
         elif self.lambd < 5:
-            self.lambd*=2
+            self.lambd*=4
         return t*delt.flatten()  
 
     def take_step(self, X_t, A, Y):
@@ -106,39 +99,51 @@ class Stepper():
 
 
         t1 = time.time()
+        g = self.nn.forward(A, self.X_t)
+        #jac = self.nn.jac(A, self.X_t)
+        #A_ls = jac
+        b_ls = -g.flatten() + Y.flatten()
         for i, (a, y) in enumerate(zip(A, Y)):
-            A_bl, b_bl = self.get_block(a, y)
 
+            #A_bl, b_bl = self.get_block(a, y)
+            A_bl = self.nn.jac(np.expand_dims(a, 0), self.X_t)
             A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
-            b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
+            #b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
 
         t2 = time.time()
         if self.optimization_method=="Gaussian":
-            k = self.batch_size//2
+            k = int(self.batch_size*0.85)
             S = np.random.randn(k, A_ls.shape[0]) / (A_ls.shape[0])
             #A_ls, b_ls = S@A_ls, S@b_ls
-            delt = lsmr(S@A_ls, S@b_ls, damp=np.sqrt(self.lambd), atol=0.001)[0]
+            delt = lsmr(S@A_ls, S@b_ls, damp=np.sqrt(self.lambd), atol=1e-4)[0]
 
         elif self.optimization_method == "Random columns":
             
             indices = np.random.choice(A_ls.shape[1], size=int(A_ls.shape[1]*self.keep_prob), replace=False)
             A_ls_sampled = A_ls[:, indices]
-            delt_sampled =  lsmr(A_ls_sampled, b_ls, damp=np.sqrt(self.lambd), atol=0.001)[0]#*self.keep_prob
+            delt_sampled =  lsmr(A_ls_sampled, b_ls, damp=np.sqrt(self.lambd), atol=1e-4)[0]#*self.keep_prob
             delt = np.zeros_like(X_t)
             delt[indices] = delt_sampled
         else:
-            delt = lsmr(A_ls, b_ls, damp=np.sqrt(self.lambd), atol=0.001)[0]
-        
+            delt = lsmr(A_ls, b_ls, damp=np.sqrt(self.lambd), atol=1e-4)[0]
+
+        c = 1#e-1
+        delt = c*delt
         t3 = time.time()
         if self.backtrack:
             step = self.backtrack_step(A, Y, A_ls, b_ls, delt)
         else:
             step = delt.flatten()
         t4 = time.time()
-        print("block creation", t2-t1)
-        print("step calculation", t3-t2)
-        print("backtrack", t4-t3)
-        return X_t.flatten()+step
+        jac_creation = t2-t1
+        ls_solve = t3-t2
+        backtrack = t4-t3
+
+        if self.visualize:
+            visualize_step(step)
+
+
+        return X_t.flatten()+step, jac_creation, ls_solve, backtrack
 
 
 def mse(g, X, A, Y):
@@ -147,9 +152,9 @@ def mse(g, X, A, Y):
     )/A.shape[0]
 
 
-def optimize(g, X0, A, Y, A_test=None, Y_test=None, steps=150, max_time=300, 
+def optimize(g, X0, A, Y, A_test=None, Y_test=None, max_time=300, 
                 batch_size=100, backtrack=True, optimization_method="Random",
-                optim_params=None):
+                optim_params=None, visualize=False):
     """
     g: generic class that provides a forward function and jacobian function
     X0 : initial parameter guess for parameters in g
@@ -164,13 +169,15 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, steps=150, max_time=300,
     train_errors = []
     test_errors = []
     X_t = X0
-    MAX_ITER = steps
     N = A.shape[0]
     t1 = datetime.now()
     print("Parameter count", g.param_count)
     
-    stepper = Stepper(optimization_method, g, backtrack, lambd=1, batch_size=batch_size, optim_params=optim_params)
-    for k in tqdm(range(MAX_ITER)):
+    stepper = Stepper(optimization_method, g, backtrack, batch_size=batch_size, optim_params=optim_params, visualize=visualize)
+    k = 0
+    timer = {"Jac creation": [], "LS solve": [], "backtrack": []}
+    
+    while True:
         if datetime.now()-t1>timedelta(seconds=max_time):
             print("timeout")
             break
@@ -180,7 +187,11 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, steps=150, max_time=300,
         random_indices = np.random.choice(N,
                                   size=batch_size,
                                   replace=False)
-        X_t = stepper.take_step(X_t, A[random_indices, :], Y[random_indices, :])
+        X_t, jac_creation_time, ls_solve, backtrack = stepper.take_step(X_t, A[random_indices, :], Y[random_indices, :])
+
+        timer["Jac creation"].append(jac_creation_time)
+        timer["LS solve"].append(ls_solve)
+        timer["backtrack"].append(backtrack)
 
         train_mse = mse(g,X_t, A[random_indices], Y[random_indices])
         train_errors.append(train_mse)
@@ -193,6 +204,9 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, steps=150, max_time=300,
             print("Test error: ", test_mse )
         #if np.linalg.norm(X_tm1-X_t) <= epsilon:
             #break
-        
-    return X_t, train_errors, test_errors
+        k+=1
+
+
+    
+    return X_t, train_errors, test_errors, timer 
 
