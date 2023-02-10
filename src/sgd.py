@@ -44,12 +44,16 @@ def stochastic_gradient_descent(X, Y,  nn_gn, max_time, batch_size, lr=0.001):
         loss.backward()
         optimizer.step()
         #print(f'[{epoch + 1}, {i + 1:5d}] loss: {loss.item():.3f}')
+        inputs_l, labels_l = torch.tensor(X), torch.tensor(Y)
+        out_l = net(inputs_l)
+        mse_loss = criterion(out_l, labels_l)
+
         l = customloss(nn_gn, X, Y)
         if epoch%100==1:
             
             print(f"{epoch}: Loss MSE: {l} ")
         epoch+=1
-        losses.append(l)
+        losses.append(mse_loss.detach())
     print("Timeout")
     return losses
 

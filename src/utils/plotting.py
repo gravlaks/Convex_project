@@ -12,7 +12,7 @@ def plot(train_errors, sgd_loss):
 
 def plot_mult(losses, labels, filename, tf, title):
     
-
+    plt.figure()
 
 
     for loss, label in zip(losses, labels):
@@ -29,13 +29,20 @@ def plot_mult(losses, labels, filename, tf, title):
 
     plt.show()
 
-def plot_timer(timer):
-
+def plot_timer(timer, title="Timer"):
+    plt.figure()
     y = [np.mean(np.array(timer["Jac creation"])), np.mean(np.array(timer["LS solve"])), np.mean(np.array(timer["backtrack"]))]
     
     plt.pie(y, labels = ["Jacobian creation", "LS solve", "Backtracking"])
-    plt.show()
+    plt.title(title)
+    plt.savefig("plots/"+title+".png")
 
 def visualize_step(step):
     plt.hist(step, bins=100,density=True, log=True)
+    plt.show()
+
+def plot_backtracks(bactracks):
+    plt.figure()
+    plt.plot(bactracks)
+    plt.title("Backtracks per iteration")
     plt.show()

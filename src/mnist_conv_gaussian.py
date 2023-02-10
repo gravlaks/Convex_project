@@ -18,7 +18,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     ## Load MNIST Dataset 
-    N=1000
+    N=500
     (train_X, train_y), (test_X, test_y) = get_data_classifier(N=N, linear_input=False)
     ## Get initial neural network parameters 
     m = train_y.shape[1]
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
-    MAX_TIME = 60
+    MAX_TIME = 300
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
     X_est,train_errors_gaussian, _, timer = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=True,
@@ -43,15 +43,15 @@ if __name__ == '__main__':
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
     X_est,train_errors_05, _, timer = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=True,
-                        optimization_method="Random columns", optim_params={"keep_prob":0.5})
+                        optimization_method="Random columns", optim_params={"keep_prob":1})
     plot_timer(timer)
     
     ## Print results
     losses = [train_errors_gaussian,train_errors_05]
-    labels = ["Algo 2: Gaussian", "Algo 2: keep_prob 0.5"]
+    labels = ["Algo 2: Gaussian", "Algo 2: Keep prob = 1"]
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    plot_mult(losses, labels,  "plots/Classifier10dim", MAX_TIME, "Algo 2: Digit 10dim classification")
+    plot_mult(losses, labels,  "plots/Gaussian comparison", MAX_TIME, "Algo 2: Digit 10dim classification")
 
     
 

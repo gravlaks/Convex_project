@@ -18,7 +18,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     ## Load MNIST Dataset 
-    N=1000
+    N=400
     (train_X, train_y), (test_X, test_y) = get_data_classifier(N=N, linear_input=False)
 
     ## Get initial neural network parameters 
@@ -33,41 +33,41 @@ if __name__ == '__main__':
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
-    MAX_TIME = 120
+    MAX_TIME = 150
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_1, _ , timer1= optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=False,
+    X_est,train_errors_1, _ , timer1= optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":1}, visualize=False)
 
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_05, _ , timer05 = optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_05, _ , timer05 = optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.5})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_01, _, timer01 = optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_01, _, timer01 = optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.1})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_001, _ , timer001= optimize(nn_gn, X0, train_X, train_y, batch_size=200, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_001, _ , timer001= optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.01})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
 
-    sgd_losses_lr05 = stochastic_gradient_descent(train_X, train_y,  nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.5)
+    sgd_losses_lr05 = stochastic_gradient_descent(train_X, train_y,  nn_gn=nn_gn, max_time=MAX_TIME, batch_size=300, lr=0.5)
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    plot_timer(timer1)
-    plot_timer(timer05)
-    plot_timer(timer01)
-    plot_timer(timer001)
-    sgd_losses_lr01 = stochastic_gradient_descent(train_X, train_y, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.1)
+    plot_timer(timer1, title="Timer: keep_prob=1")
+    plot_timer(timer05, title="Timer: keep_prob=0.5")
+    plot_timer(timer01, title="Timer: keep_prob=0.1")
+    plot_timer(timer001, title="Timer: keep_prob=0.001")
+    sgd_losses_lr01 = stochastic_gradient_descent(train_X, train_y, nn_gn=nn_gn, max_time=MAX_TIME, batch_size=300, lr=0.1)
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    sgd_losses_lr001 = stochastic_gradient_descent(train_X, train_y,nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.01)
+    sgd_losses_lr001 = stochastic_gradient_descent(train_X, train_y,nn_gn=nn_gn, max_time=MAX_TIME, batch_size=300, lr=0.01)
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    sgd_losses_lr0001 = stochastic_gradient_descent(train_X, train_y,  nn_gn=nn_gn, max_time=MAX_TIME, batch_size=200, lr=0.001)
+    sgd_losses_lr0001 = stochastic_gradient_descent(train_X, train_y,  nn_gn=nn_gn, max_time=MAX_TIME, batch_size=300, lr=0.001)
 
     ## Print results
 

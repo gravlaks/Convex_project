@@ -25,34 +25,30 @@ if __name__ == '__main__':
     n = train_X.shape[1]
 
     neural_network = Conv2_Classifier()
-    #summary(neural_network, input_size = (1, 28, 28))
     neural_network.float()
     nn_gn = NN_GN(neural_network)
     X0 = nn_gn.get_X()
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
-    MAX_TIME = 30
+    MAX_TIME = 60
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_gaussian, _, timer = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=False,
+    X_est,train_errors_gaussian, _, timer, backtracks = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=False,
                         optimization_method="Gaussian", optim_params={"keep_prob":1})
 
-    plot_timer(timer)
 
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_05, _, timer = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_05, _, timer, backtracks = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":1})
-    plot_timer(timer)
-    
+    plot_backtracks(backtracks)
     ## Print results
     losses = [train_errors_gaussian,train_errors_05]
     labels = ["Algo 2: Without Backtrack", "Algo 2: With Backtrack"]
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
     plot_mult(losses, labels,  "plots/backtrack", MAX_TIME, "Algo 2: Backtrack Comparison")
-
     
 
 

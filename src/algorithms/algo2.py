@@ -14,9 +14,11 @@ from utils.plotting import visualize_step
 
 
 class Stepper():
-    def __init__(self, optimization_method, nn, backtrack, batch_size, optim_params, visualize):
+    def __init__(self, optimization_method, nn, backtrack, batch_size, optim_params, visualize, A, Y):
         if optim_params is None:
             optim_params = {}
+        self.full_A = A
+        self.full_Y = Y
         self.optimization_method=optimization_method
         self.nn = nn
         self.backtrack=backtrack
@@ -27,6 +29,8 @@ class Stepper():
             self.keep_prob = optim_params["keep_prob"]
         else:
             self.keep_prob = 0.5
+
+        self.backtracks = []
         
 
     def get_block(self, a, y):
@@ -56,7 +60,7 @@ class Stepper():
         
 
         def get_f(step):
-            ret = np.linalg.norm(self.nn.forward(A, self.X_t + step)-Y.flatten())**2 # + self.lambd*np.linalg.norm(step)**2
+            ret = np.linalg.norm(self.nn.forward(self.full_A, self.X_t + step)-self.full_Y.flatten())**2 # + self.lambd*np.linalg.norm(step)**2
             return ret
         #val = get_val(self.X_t)
         i = 0
@@ -75,7 +79,8 @@ class Stepper():
             if i == maxi:
                 print("Max back track")
                 if self.lambd<5:
-                    self.lambd*=2
+                    self.lambd*=4
+                self.backtracks.append(i)
                 return np.zeros_like(self.X_t)
                 break
                 #return np.zeros_like(self.X_t)
@@ -85,6 +90,8 @@ class Stepper():
 
             new_error =  get_f(step)
         print(i)
+        self.backtracks.append(i)
+
         if i < 1 and self.lambd>1e-15:
             self.lambd/=4
         elif self.lambd < 5:
@@ -114,7 +121,6 @@ class Stepper():
         if self.optimization_method=="Gaussian":
             k = int(self.batch_size*0.85)
             S = np.random.randn(k, A_ls.shape[0]) / (A_ls.shape[0])
-            #A_ls, b_ls = S@A_ls, S@b_ls
             delt = lsmr(S@A_ls, S@b_ls, damp=np.sqrt(self.lambd), atol=1e-4)[0]
 
         elif self.optimization_method == "Random columns":
@@ -171,9 +177,10 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, max_time=300,
     X_t = X0
     N = A.shape[0]
     t1 = datetime.now()
+
     print("Parameter count", g.param_count)
     
-    stepper = Stepper(optimization_method, g, backtrack, batch_size=batch_size, optim_params=optim_params, visualize=visualize)
+    stepper = Stepper(optimization_method, g, backtrack, batch_size=batch_size, optim_params=optim_params, visualize=visualize, A=A, Y=Y)
     k = 0
     timer = {"Jac creation": [], "LS solve": [], "backtrack": []}
     
@@ -193,7 +200,7 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, max_time=300,
         timer["LS solve"].append(ls_solve)
         timer["backtrack"].append(backtrack)
 
-        train_mse = mse(g,X_t, A[random_indices], Y[random_indices])
+        train_mse = mse(g,X_t, A, Y)
         train_errors.append(train_mse)
         if k%3==1:
             print("Train error: ", train_mse, "lambd: ", stepper.lambd )
@@ -208,5 +215,5 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, max_time=300,
 
 
     
-    return X_t, train_errors, test_errors, timer 
+    return X_t, train_errors, test_errors, timer, stepper.backtracks
 
