@@ -15,18 +15,18 @@ class NN_GN:
    
     def __replace_params(self, X):
         left = 0
-    
-        for name, W in self.nn.named_parameters():
-                dim = len(W.flatten())
-                W_shape = W.shape
-                W.data = Variable(
-                torch.tensor(X[left:left+dim].reshape(W_shape), dtype=torch.float32)
-                    , requires_grad=True)
-                left += dim
+        for W in self.nn.parameters():
+            dim = len(W.flatten())
+            W_shape = W.shape
+            W.data = Variable(
+            torch.tensor(X[left:left+dim].reshape(W_shape), dtype=torch.float32)
+                , requires_grad=True)
+            left += dim
     def __torch_forward(self, a, X):
         self.__replace_params(X)
         if not self.is_linear:
-            a = a.reshape((-1, a.shape[-1]))
+            pass
+            #a = a.reshape((-1, a.shape[-1]))
         
         y_pred = self.nn.forward(torch.tensor(a))
         return y_pred.flatten()

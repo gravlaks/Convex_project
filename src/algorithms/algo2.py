@@ -17,6 +17,7 @@ class Stepper():
     def __init__(self, optimization_method, nn, backtrack, batch_size, optim_params, visualize, A, Y):
         if optim_params is None:
             optim_params = {}
+
         self.full_A = A
         self.full_Y = Y
         self.optimization_method=optimization_method
@@ -29,6 +30,11 @@ class Stepper():
             self.keep_prob = optim_params["keep_prob"]
         else:
             self.keep_prob = 0.5
+        if "max_backtrack" in optim_params:
+            self.max_backtrack = optim_params["max_backtrack"]
+        else:
+            self.max_backtrack = 30
+        
 
         self.backtracks = []
         
@@ -94,7 +100,7 @@ class Stepper():
 
         if i < 1 and self.lambd>1e-15:
             self.lambd/=4
-        elif self.lambd < 5:
+        elif self.lambd < 500:
             self.lambd*=4
         return t*delt.flatten()  
 
@@ -183,7 +189,8 @@ def optimize(g, X0, A, Y, A_test=None, Y_test=None, max_time=300,
     stepper = Stepper(optimization_method, g, backtrack, batch_size=batch_size, optim_params=optim_params, visualize=visualize, A=A, Y=Y)
     k = 0
     timer = {"Jac creation": [], "LS solve": [], "backtrack": []}
-    
+    train_mse = mse(g,X_t, A, Y)
+    train_errors.append(train_mse)
     while True:
         if datetime.now()-t1>timedelta(seconds=max_time):
             print("timeout")
