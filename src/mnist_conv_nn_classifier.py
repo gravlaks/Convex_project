@@ -18,7 +18,7 @@ if __name__ == '__main__':
     torch.manual_seed(0)
 
     ## Load MNIST Dataset 
-    N=400
+    N=800
     (train_X, train_y), (test_X, test_y) = get_data_classifier(N=N, linear_input=False)
 
     ## Get initial neural network parameters 
@@ -33,23 +33,23 @@ if __name__ == '__main__':
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
-    MAX_TIME = 150
+    MAX_TIME = 120
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_1, _ , timer1= optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_1, _ , timer1, _,= optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":1}, visualize=False)
 
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_05, _ , timer05 = optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_05, _ , timer05, _,= optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.5})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_01, _, timer01 = optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_01, _, timer01, _, = optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.1})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_001, _ , timer001= optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_001, _ , timer001, _,= optimize(nn_gn, X0, train_X, train_y, batch_size=300, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":0.01})
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))

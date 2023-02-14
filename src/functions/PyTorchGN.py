@@ -3,7 +3,6 @@ from torch.autograd.functional import jacobian
 import numpy as np
 import torch
 import threading 
-
 class NN_GN:
     def __init__(self, nn, is_linear=True):
         self.nn = nn
@@ -64,6 +63,25 @@ class NN_GN:
         # #print(rows)
         # Jac = np.vstack(rows)
         # return Jac
+        
+        # autograd_hacks.add_hooks(self.nn)
+        # y_hack = self.__torch_forward(a, X)
+        # torch.sum(y_hack).backward(retain_graph=True)
+        # autograd_hacks.compute_grad1(self.nn)
+        # autograd_hacks.clear_backprops(self.nn)
+        # autograd_hacks.disable_hooks()
+
+        # params = [param.grad1 for param in self.nn.parameters()]
+        # flattened = [r.flatten(start_dim=1).detach().numpy() for r in params]
+        # Jac = np.concatenate(flattened, axis=1)
+        # print(Jac.shape)
+        # return Jac
+        # for param in self.nn.parameters():
+
+        #     print(param.grad1.shape)
+        # raise Exception
+
+        
         for i, y in enumerate(y_pred):
             row = torch.autograd.grad(y, list(self.nn.parameters()), retain_graph=True)
             row = np.hstack([r.flatten().detach().numpy() for r in row])

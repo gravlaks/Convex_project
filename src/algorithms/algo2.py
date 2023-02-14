@@ -111,15 +111,23 @@ class Stepper():
         output_dim = len(Y[0])
 
 
+
+        ## For random columnsØ
+        self.X_t_dropout = self.X_t.copy()
+        indices = np.random.choice(A_ls.shape[1], size=int(A_ls.shape[1]*self.keep_prob), replace=False)
+
+        # if self.optimization_method == "Random columns":
+        #     self.X_t_dropout = np.zeros_like(self.X_t)
+        #     self.X_t_dropout[indices] = self.X_t[indices]
         t1 = time.time()
-        g = self.nn.forward(A, self.X_t)
+        g = self.nn.forward(A, self.X_t_dropout)
         #jac = self.nn.jac(A, self.X_t)
         #A_ls = jac
         b_ls = -g.flatten() + Y.flatten()
         for i, (a, y) in enumerate(zip(A, Y)):
 
             #A_bl, b_bl = self.get_block(a, y)
-            A_bl = self.nn.jac(np.expand_dims(a, 0), self.X_t)
+            A_bl = self.nn.jac(np.expand_dims(a, 0), self.X_t_dropout)
             A_ls[i*output_dim:(i+1)*output_dim, :] = A_bl
             #b_ls[i*output_dim:(i+1)*output_dim, :] = b_bl.reshape((-1, 1))
 
@@ -131,7 +139,6 @@ class Stepper():
 
         elif self.optimization_method == "Random columns":
             
-            indices = np.random.choice(A_ls.shape[1], size=int(A_ls.shape[1]*self.keep_prob), replace=False)
             A_ls_sampled = A_ls[:, indices]
             delt_sampled =  lsmr(A_ls_sampled, b_ls, damp=np.sqrt(self.lambd), atol=1e-4)[0]#*self.keep_prob
             delt = np.zeros_like(X_t)

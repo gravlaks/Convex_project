@@ -19,7 +19,7 @@ if __name__ == '__main__':
 
     ## Load MNIST Dataset 
     N=1000
-    MAX_TIME=10
+    MAX_TIME=5
 
 
 
@@ -40,12 +40,12 @@ if __name__ == '__main__':
     print("Initial train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Initial test Accuracy", get_accuracy(nn_gn, test_X, test_y))
 
-    X_est,losses_gn_backtrack, _, _ = optimize(nn_gn, X0, train_X, train_y, max_time=MAX_TIME, batch_size=300 ,backtrack=True)
+    X_est,losses_gn_backtrack, _, _, _ = optimize(nn_gn, X0, train_X, train_y, max_time=MAX_TIME, batch_size=300 ,backtrack=True)
     print("Train Accuracy GN Proj.", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy GN Proj.", get_accuracy(nn_gn, test_X, test_y))
 
 
-    X_est,losses_gn, _, _= optimize(nn_gn, X0, train_X, train_y, max_time=MAX_TIME, batch_size=300, backtrack=False)
+    X_est,losses_gn, _, _, _= optimize(nn_gn, X0, train_X, train_y, max_time=MAX_TIME, batch_size=300, backtrack=False)
     #X_est = train_1(nn_gn, train_X, train_y, x_init=X0, k=1)
     print("Train Accuracy GN", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy GN", get_accuracy(nn_gn, test_X, test_y))

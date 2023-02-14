@@ -32,19 +32,17 @@ if __name__ == '__main__':
     print("Parameters", X0.shape)
 
     ## Do Gauss Newton
-    MAX_TIME = 300
+    MAX_TIME = 100
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_gaussian, _, timer = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_gaussian, _, timer, _ = optimize(nn_gn, X0, train_X, train_y, batch_size=150, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Gaussian", optim_params={"keep_prob":1})
 
-    plot_timer(timer)
 
     print("Train Accuracy", get_accuracy(nn_gn, train_X, train_y))
     print("Test Accuracy", get_accuracy(nn_gn, test_X, test_y))
-    X_est,train_errors_05, _, timer = optimize(nn_gn, X0, train_X, train_y, batch_size=400, max_time=MAX_TIME, backtrack=True,
+    X_est,train_errors_05, _, timer, _  = optimize(nn_gn, X0, train_X, train_y, batch_size=150, max_time=MAX_TIME, backtrack=True,
                         optimization_method="Random columns", optim_params={"keep_prob":1})
-    plot_timer(timer)
     
     ## Print results
     losses = [train_errors_gaussian,train_errors_05]
