@@ -20,11 +20,16 @@ def stochastic_gradient_descent(X, Y,  nn_gn, max_time, batch_size, lr=0.001):
    
 
     net.apply(weight_reset)
-    optimizer = optim.SGD(net.parameters(), lr=lr, momentum=0.9)
+    optimizer = optim.SGD(net.parameters(), lr=lr)
     criterion = nn.MSELoss()
     losses = []
     t1 = datetime.now()
     epoch = 1
+    def mse(Y_pred, Y):
+        
+        mse = ((Y_pred.flatten()- Y.flatten())**2).mean()
+        return mse
+
     while datetime.now()-t1<=timedelta(seconds=max_time):  
 
         
@@ -46,14 +51,13 @@ def stochastic_gradient_descent(X, Y,  nn_gn, max_time, batch_size, lr=0.001):
         #print(f'[{epoch + 1}, {i + 1:5d}] loss: {loss.item():.3f}')
         inputs_l, labels_l = torch.tensor(X), torch.tensor(Y)
         out_l = net(inputs_l)
-        mse_loss = criterion(out_l, labels_l)
+        mse_loss = mse(out_l.detach().numpy(), labels_l.detach().numpy())
 
-        l = customloss(nn_gn, X, Y)
         if epoch%100==1:
             
-            print(f"{epoch}: Loss MSE: {l} ")
+            print(f"{epoch}: Loss MSE: {mse_loss} ")
         epoch+=1
-        losses.append(mse_loss.detach())
+        losses.append(mse_loss)
     print("Timeout")
     return losses
 

@@ -6,7 +6,6 @@ sys.path.append("../functions")
 from tqdm import tqdm
 from datetime import datetime, timedelta
 import time
-
 from utils.plotting import visualize_step
 
  
@@ -15,8 +14,13 @@ from utils.plotting import visualize_step
 
 class Stepper():
     def __init__(self, optimization_method, nn, backtrack, batch_size, optim_params, visualize, A, Y):
+        self.optim_params = optim_params
         if optim_params is None:
-            optim_params = {}
+            self.optim_params = {
+                "keep_prov": 1,
+                "max_backtrack": 30,
+                "momentum": 0}
+        
 
         self.full_A = A
         self.full_Y = Y
@@ -26,18 +30,15 @@ class Stepper():
         self.lambd = 1
         self.batch_size = batch_size
         self.visualize = visualize
-        if "keep_prob" in optim_params:
-            self.keep_prob = optim_params["keep_prob"]
-        else:
-            self.keep_prob = 0.5
-        if "max_backtrack" in optim_params:
-            self.max_backtrack = optim_params["max_backtrack"]
-        else:
-            self.max_backtrack = 30
+        self.keep_prob = self.optim_params.get("keep_prob", 1)
+        self.max_backtrack = self.optim_params.get("max_backtrack", 30)
         
+        self.optim_params["momentum"] = self.optim_params.get("momentum", 0)
 
         self.backtracks = []
-        
+
+        self.prev_step = np.zeros_like(self.nn.get_X())
+        self.first_iteration = True
 
     def get_block(self, a, y):
         """
@@ -78,14 +79,17 @@ class Stepper():
 
         error_vec = self.nn.forward(A, self.X_t + delt)-Y.flatten()
         nabla_f = 2*A_ls.T@error_vec #+ 2*self.lambd*delt
+
+        min_lambd, max_lambd = 1e-15, 500
+        lambd_multiplier = 4
         while new_error > old_error + alpha*t*(nabla_f).T@delt :
             i+=1
 
             
             if i == maxi:
                 print("Max back track")
-                if self.lambd<5:
-                    self.lambd*=4
+                if self.lambd<max_lambd:
+                    self.lambd*=lambd_multiplier
                 self.backtracks.append(i)
                 return np.zeros_like(self.X_t)
                 break
@@ -98,10 +102,12 @@ class Stepper():
         print(i)
         self.backtracks.append(i)
 
-        if i < 1 and self.lambd>1e-15:
-            self.lambd/=4
-        elif self.lambd < 500:
-            self.lambd*=4
+        if i < 1 and self.lambd>min_lambd:
+            self.lambd/=lambd_multiplier
+        elif self.lambd < max_lambd:
+            self.lambd*=lambd_multiplier
+
+        
         return t*delt.flatten()  
 
     def take_step(self, X_t, A, Y):
@@ -148,11 +154,21 @@ class Stepper():
 
         c = 1#e-1
         delt = c*delt
+
+        if self.first_iteration:
+            self.first_iteration = False
+        else:
+            delt = self.optim_params["momentum"]*self.prev_step + (1-self.optim_params["momentum"])*delt
+        
         t3 = time.time()
         if self.backtrack:
             step = self.backtrack_step(A, Y, A_ls, b_ls, delt)
         else:
             step = delt.flatten()
+
+        ## Momentum
+
+        self.prev_step = step;
         t4 = time.time()
         jac_creation = t2-t1
         ls_solve = t3-t2
@@ -166,9 +182,12 @@ class Stepper():
 
 
 def mse(g, X, A, Y):
-    return np.sum(
-        np.linalg.norm(g.forward(A, X).reshape((-1, 1))-Y.reshape((-1, 1)), axis=1)**2
-    )/A.shape[0]
+    Y_pred = g.forward(A, X).reshape((-1, 1))
+    mse = ((Y_pred.flatten()- Y.flatten())**2).mean()
+    return mse
+    # return np.sum(
+    #     np.linalg.norm()-Y.reshape((-1, 1)), axis=1)**2
+    # )/A.shape[0]
 
 
 def optimize(g, X0, A, Y, A_test=None, Y_test=None, max_time=300, 
