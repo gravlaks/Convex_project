@@ -80,7 +80,7 @@ class Stepper():
         error_vec = self.nn.forward(A, self.X_t + delt)-Y.flatten()
         nabla_f = 2*A_ls.T@error_vec #+ 2*self.lambd*delt
 
-        min_lambd, max_lambd = 1e-15, 500
+        min_lambd, max_lambd = 1e-15, 1
         lambd_multiplier = 4
         while new_error > old_error + alpha*t*(nabla_f).T@delt :
             i+=1
@@ -140,7 +140,8 @@ class Stepper():
         t2 = time.time()
         if self.optimization_method=="Gaussian":
             k = int(self.batch_size*0.85)
-            S = np.random.randn(k, A_ls.shape[0]) / (A_ls.shape[0])
+            #extra_scaling = 10
+            S = np.random.randn(k, A_ls.shape[0]) / np.sqrt(A_ls.shape[0])
             delt = lsmr(S@A_ls, S@b_ls, damp=np.sqrt(self.lambd), atol=1e-4)[0]
 
         elif self.optimization_method == "Random columns":

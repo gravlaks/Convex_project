@@ -27,7 +27,7 @@ def plot_mult(losses, labels, filename, tf, title):
     plt.tight_layout()
     plt.savefig(filename)
 
-    plt.show()
+    #plt.show()
 
 def plot_timer(timer, title="Timer"):
     plt.figure()
